@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MeteoMe</title>
-    <!-- Link corretto per Google Fonts -->
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com" rel="stylesheet">
@@ -17,11 +17,11 @@
             color: #555; 
             margin: 0;
             padding: 20px;
-            font-size: 24px; /* Leggermente più grande per il font Caveat */
+            font-size: 24px; 
         }
         
-        h1 { color: #FFB7B2; font-size: 45px; margin-bottom: 5px; font-family: 'Caveat'; cursive; }
-        .mese-titolo { font-size: 32px; color: #B2E2F2; margin-bottom: 15px; }
+        h1 { color: #FFB7B2; font-size: 45px; margin-bottom: 5px; }
+        .mese-titolo { font-size: 32px; color: #B2E2F2; margin-bottom: 15px; text-transform: capitalize; }
 
         .schermata { display: none; }
         .attiva { display: block; }
@@ -45,7 +45,6 @@
             justify-content: center; 
             font-size: 28px; 
             border: 1px solid #b2e2f2;
-            font-family: 'Caveat', cursive;
         }
 
         .oggi { 
@@ -84,20 +83,21 @@
 
     <div id="home" class="schermata attiva">
         <h1>MeteoMe</h1>
-        <div class="mese-titolo">Febbraio 2024</div>
+        <!-- Il titolo del mese ora si aggiorna da solo -->
+        <div class="mese-titolo" id="display-mese"></div>
         <div class="griglia" id="calendario"></div>
     </div>
 
     <div id="nuovo-meteo" class="schermata">
         <h1>Che meteo hai oggi?</h1>
         <div id="scelta-emoji">
-            <button class="emoji-btn" onclick="seleziona('😍')">😍</button>
-            <button class="emoji-btn" onclick="seleziona('😁')">😁</button>
-            <button class="emoji-btn" onclick="seleziona('😐')">😐</button>
-            <button class="emoji-btn" onclick="seleziona('😔')">😔</button>
-            <button class="emoji-btn" onclick="seleziona('😭')">😭</button>
-            <button class="emoji-btn" onclick="seleziona('😡')">😡</button>
-            <button class="emoji-btn" onclick="seleziona('🤮')">🤮</button>
+            <button class="emoji-btn" onclick="seleziona('😍', this)">😍</button>
+            <button class="emoji-btn" onclick="seleziona('😁', this)">😁</button>
+            <button class="emoji-btn" onclick="seleziona('😐', this)">😐</button>
+            <button class="emoji-btn" onclick="seleziona('😔', this)">😔</button>
+            <button class="emoji-btn" onclick="seleziona('😭', this)">😭</button>
+            <button class="emoji-btn" onclick="seleziona('😡', this)">😡</button>
+            <button class="emoji-btn" onclick="seleziona('🤮', this)">🤮</button>
         </div>
         <p>C'è qualcosa che vuoi dire?</p>
         <textarea id="nota" placeholder="Scrivi qui..."></textarea>
@@ -106,55 +106,64 @@
     </div>
 
     <script>
+        // --- LOGICA DELLA DATA AUTOMATICA ---
+        const dataAttuale = new Date();
+        const oggiGiorno = dataAttuale.getDate();
+        const opzioniMese = { month: 'long', year: 'numeric' };
+        document.getElementById('display-mese').innerText = dataAttuale.toLocaleDateString('it-IT', opzioniMese);
+
+        // Quanti giorni ci sono in questo mese?
+        const giorniNelMese = new Date(dataAttuale.getFullYear(), dataAttuale.getMonth() + 1, 0).getDate();
+
+        let emojiSelezionata = "";
+
         function vaiA(id) {
             document.querySelectorAll('.schermata').forEach(s => s.classList.remove('attiva'));
             document.getElementById(id).classList.add('attiva');
         }
 
-        const cal = document.getElementById('calendario');
-        const oggiGiorno = 12; 
-        const emojiCasuali = ['😍', '😁', '😐', '😔', '😭'];
+        function seleziona(emoji, elemento) {
+            emojiSelezionata = emoji;
+            document.querySelectorAll('.emoji-btn').forEach(btn => btn.style.borderColor = "#B2E2F2");
+            elemento.style.borderColor = "#FFB7B2";
+        }
 
-        for (let i = 1; i <= 30; i++) {
+        function salvaMeteo() {
+            if (emojiSelezionata === "") {
+                alert("Scegli un'emoji!");
+                return;
+            }
+            // Salviamo con una chiave che include mese e anno per non sovrascrivere i mesi futuri
+            const chiave = `meteo-${dataAttuale.getMonth()}-${dataAttuale.getFullYear()}-giorno-${oggiGiorno}`;
+            localStorage.setItem(chiave, emojiSelezionata);
+            location.reload();
+        }
+
+        // --- GENERAZIONE CALENDARIO DINAMICO ---
+        const cal = document.getElementById('calendario');
+        
+        for (let i = 1; i <= giorniNelMese; i++) {
             let d = document.createElement('div');
             d.className = 'giorno';
             
+            const chiaveRicerca = `meteo-${dataAttuale.getMonth()}-${dataAttuale.getFullYear()}-giorno-${i}`;
+            const salvata = localStorage.getItem(chiaveRicerca);
+
             if (i === oggiGiorno) {
                 d.classList.add('oggi');
-                d.innerText = "+";
+                d.innerText = salvata ? salvata : "+";
                 d.onclick = () => vaiA('nuovo-meteo');
+            } else if (salvata) {
+                d.innerText = salvata;
             } else if (i < oggiGiorno) {
-                d.innerText = emojiCasuali[i % emojiCasuali.length]; 
+                d.innerText = "·";
+                d.style.opacity = "0.3";
             } else {
                 d.classList.add('vuoto');
-                d.innerText = "";
             }
             cal.appendChild(d);
         }
+    </script>
+</body>
+</html>
 
-       function salvaMeteo() {
-    if (emojiScelta === "") {
-        alert("Per favore, scegli un'emoji!"); // Se non hai cliccato nulla, ti avvisa
-        return;
-    }
-
-    // Cerchiamo nella pagina il quadratino di "oggi"
-    const casellaOggi = document.querySelector('.oggi');
-    
-    // Cambiamo il "+" con l'emoji che hai scelto!
-    casellaOggi.innerText = emojiScelta;
-    
-    // Torniamo alla home
-    vaiA('home');
-}
-
-        
-let emojiScelta = ""; // Qui dentro l'app si segnerà l'emoji che clicchi
-
-function seleziona(emoji) {
-    emojiScelta = emoji; // "Ehi app, l'utente ha scelto questa emoji!"
-    
-    // Piccola finezza: evidenziamo il tasto cliccato per farlo capire all'utente
-    document.querySelectorAll('.emoji-btn').forEach(b => b.style.border = "2px solid #B2E2F2");
-    event.target.style.border = "2px solid #FFB7B2"; 
-}
