@@ -15,9 +15,7 @@
             background-color: #FFF5F8; 
             text-align: center; 
             color: #555; 
-            margin: 0;
-            padding: 20px;
-            font-size: 24px; 
+            margin: 0; padding: 20px; font-size: 24px; 
         }
         
         h1 { color: #FFB7B2; font-size: 45px; margin-bottom: 5px; }
@@ -27,69 +25,59 @@
         .attiva { display: block; }
 
         .griglia { 
-            display: grid; 
-            grid-template-columns: repeat(7, 1fr); 
-            gap: 10px; 
-            padding: 15px; 
-            background: white; 
-            border-radius: 20px; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            display: grid; grid-template-columns: repeat(7, 1fr); 
+            gap: 10px; padding: 15px; background: white; 
+            border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
 
         .giorno { 
-            aspect-ratio: 1; 
-            background: #E2F0CB; 
-            border-radius: 10px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 28px; 
-            border: 1px solid #b2e2f2;
+            aspect-ratio: 1; background: #E2F0CB; border-radius: 10px; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 28px; border: 1px solid #b2e2f2; cursor: pointer;
         }
 
-        .oggi { 
-            background-color: #FFDAC1; 
-            color: #ff9aa2;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .vuoto { background-color: #f9f9f9; border: 1px dashed #eee; }
+        .oggi { background-color: #FFDAC1; color: #ff9aa2; font-weight: bold; }
+        .vuoto { background-color: #f9f9f9; border: 1px dashed #eee; cursor: default; }
 
         .emoji-btn { 
-            font-size: 40px; 
-            background: white; 
-            border: 2px solid #B2E2F2; 
-            border-radius: 15px; 
-            margin: 5px; 
-            cursor: pointer; 
+            font-size: 40px; background: white; border: 2px solid #B2E2F2; 
+            border-radius: 15px; margin: 5px; cursor: pointer; 
         }
 
         textarea { 
-            width: 85%; height: 100px;
-            border-radius: 15px; border: 2px solid #FFDAC1; 
-            padding: 10px; font-family: 'Caveat', cursive; font-size: 22px;
+            width: 85%; height: 100px; border-radius: 15px; 
+            border: 2px solid #FFDAC1; padding: 10px; 
+            font-family: 'Caveat', cursive; font-size: 22px;
         }
 
-        .btn-salva { 
+        .btn-azione { 
             background: #B2E2F2; border: none; padding: 10px 30px; 
-            border-radius: 20px; font-family: 'Caveat', cursive; font-size: 26px;
-            margin-top: 15px;
-            cursor: pointer;
+            border-radius: 20px; font-family: 'Caveat', cursive; 
+            font-size: 26px; margin: 10px 5px; cursor: pointer;
         }
+
+        .box-diario {
+            background: white; border: 2px solid #FFB7B2; border-radius: 20px;
+            padding: 20px; margin: 20px auto; width: 90%; max-width: 400px;
+            display: flex; align-items: center; justify-content: space-around;
+        }
+        .emoji-grande { font-size: 80px; }
+        .testo-nota { font-size: 28px; text-align: left; max-width: 60%; }
+        .data-dettaglio { text-decoration: underline; font-size: 32px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
+    <!-- 1. HOME -->
     <div id="home" class="schermata attiva">
         <h1>MeteoMe</h1>
-        <!-- Il titolo del mese ora si aggiorna da solo -->
         <div class="mese-titolo" id="display-mese"></div>
         <div class="griglia" id="calendario"></div>
     </div>
 
+    <!-- 2. INSERIMENTO / MODIFICA -->
     <div id="nuovo-meteo" class="schermata">
-        <h1>Che meteo hai oggi?</h1>
+        <h1 id="titolo-inserimento">Che meteo hai oggi?</h1>
         <div id="scelta-emoji">
             <button class="emoji-btn" onclick="seleziona('😍', this)">😍</button>
             <button class="emoji-btn" onclick="seleziona('😁', this)">😁</button>
@@ -102,18 +90,29 @@
         <p>C'è qualcosa che vuoi dire?</p>
         <textarea id="nota" placeholder="Scrivi qui..."></textarea>
         <br>
-        <button class="btn-salva" onclick="salvaMeteo()">Salva</button>
+        <button class="btn-azione" onclick="salvaMeteo()">Salva</button>
+        <button class="btn-azione" style="background:#eee" onclick="vaiA('home')">Annulla</button>
+    </div>
+
+    <!-- 3. DETTAGLIO -->
+    <div id="dettaglio-giorno" class="schermata">
+        <h1 id="data-titolo" class="data-dettaglio">Data</h1>
+        <div class="box-diario">
+            <div id="emoji-display" class="emoji-grande"></div>
+            <div id="nota-display" class="testo-nota"></div>
+        </div>
+        <button class="btn-azione" id="btn-modifica">Modifica</button>
+        <button class="btn-azione" onclick="vaiA('home')">Indietro</button>
     </div>
 
     <script>
-        // --- LOGICA DELLA DATA AUTOMATICA ---
         const dataAttuale = new Date();
-        const oggiGiorno = dataAttuale.getDate();
-        const opzioniMese = { month: 'long', year: 'numeric' };
-        document.getElementById('display-mese').innerText = dataAttuale.toLocaleDateString('it-IT', opzioniMese);
+        const nomeMese = dataAttuale.toLocaleDateString('it-IT', { month: 'long' });
+        const anno = dataAttuale.getFullYear();
+        let giornoInModifica = dataAttuale.getDate(); // Di default è oggi
 
-        // Quanti giorni ci sono in questo mese?
-        const giorniNelMese = new Date(dataAttuale.getFullYear(), dataAttuale.getMonth() + 1, 0).getDate();
+        document.getElementById('display-mese').innerText = `${nomeMese} ${anno}`;
+        const giorniNelMese = new Date(anno, dataAttuale.getMonth() + 1, 0).getDate();
 
         let emojiSelezionata = "";
 
@@ -125,39 +124,65 @@
         function seleziona(emoji, elemento) {
             emojiSelezionata = emoji;
             document.querySelectorAll('.emoji-btn').forEach(btn => btn.style.borderColor = "#B2E2F2");
-            elemento.style.borderColor = "#FFB7B2";
+            if(elemento) elemento.style.borderColor = "#FFB7B2";
         }
 
         function salvaMeteo() {
-            if (emojiSelezionata === "") {
-                alert("Scegli un'emoji!");
-                return;
-            }
-            // Salviamo con una chiave che include mese e anno per non sovrascrivere i mesi futuri
-            const chiave = `meteo-${dataAttuale.getMonth()}-${dataAttuale.getFullYear()}-giorno-${oggiGiorno}`;
-            localStorage.setItem(chiave, emojiSelezionata);
+            if (emojiSelezionata === "") { alert("Scegli un'emoji!"); return; }
+            const notaTesto = document.getElementById('nota').value;
+            const dati = { emoji: emojiSelezionata, nota: notaTesto };
+            // Salviamo usando il giorno che stiamo effettivamente modificando
+            const chiave = `meteo-${dataAttuale.getMonth()}-${anno}-g-${giornoInModifica}`;
+            
+            localStorage.setItem(chiave, JSON.stringify(dati));
             location.reload();
         }
 
-        // --- GENERAZIONE CALENDARIO DINAMICO ---
+        function mostraDettaglio(giorno, dati) {
+            giornoInModifica = giorno; // Ci segniamo quale giorno stiamo guardando
+            document.getElementById('data-titolo').innerText = `Giorno ${giorno} ${nomeMese}`;
+            document.getElementById('emoji-display').innerText = dati.emoji;
+            document.getElementById('nota-display').innerText = dati.nota || "Nessuna nota.";
+            
+            // Impostiamo il tasto modifica per aprire la gestione
+            document.getElementById('btn-modifica').onclick = () => preparaModifica(giorno, dati);
+            
+            vaiA('dettaglio-giorno');
+        }
+
+        function preparaModifica(giorno, dati) {
+            giornoInModifica = giorno;
+            document.getElementById('titolo-inserimento').innerText = `Modifica giorno ${giorno}`;
+            document.getElementById('nota').value = dati.nota;
+            seleziona(dati.emoji, null); // Seleziona l'emoji vecchia
+            
+            // Troviamo il bottone emoji corrispondente per evidenziarlo
+            document.querySelectorAll('.emoji-btn').forEach(btn => {
+                if(btn.innerText === dati.emoji) btn.style.borderColor = "#FFB7B2";
+            });
+
+            vaiA('nuovo-meteo');
+        }
+
         const cal = document.getElementById('calendario');
-        
         for (let i = 1; i <= giorniNelMese; i++) {
             let d = document.createElement('div');
             d.className = 'giorno';
-            
-            const chiaveRicerca = `meteo-${dataAttuale.getMonth()}-${dataAttuale.getFullYear()}-giorno-${i}`;
-            const salvata = localStorage.getItem(chiaveRicerca);
+            const chiave = `meteo-${dataAttuale.getMonth()}-${anno}-g-${i}`;
+            const salvati = JSON.parse(localStorage.getItem(chiave));
 
-            if (i === oggiGiorno) {
+            if (i === dataAttuale.getDate()) {
                 d.classList.add('oggi');
-                d.innerText = salvata ? salvata : "+";
-                d.onclick = () => vaiA('nuovo-meteo');
-            } else if (salvata) {
-                d.innerText = salvata;
-            } else if (i < oggiGiorno) {
-                d.innerText = "·";
-                d.style.opacity = "0.3";
+                d.innerText = salvati ? salvati.emoji : "+";
+                d.onclick = () => {
+                    giornoInModifica = i;
+                    salvati ? mostraDettaglio(i, salvati) : vaiA('nuovo-meteo');
+                };
+            } else if (salvati) {
+                d.innerText = salvati.emoji;
+                d.onclick = () => mostraDettaglio(i, salvati);
+            } else if (i < dataAttuale.getDate()) {
+                d.innerText = "·"; d.style.opacity = "0.3";
             } else {
                 d.classList.add('vuoto');
             }
