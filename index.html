@@ -20,7 +20,7 @@
             font-size: 24px; /* Leggermente più grande per il font Caveat */
         }
         
-        h1 { color: #FFB7B2; font-size: 45px; margin-bottom: 5px; font-family: 'Caveat'; }
+        h1 { color: #FFB7B2; font-size: 45px; margin-bottom: 5px; font-family: 'Caveat'; cursive; }
         .mese-titolo { font-size: 32px; color: #B2E2F2; margin-bottom: 15px; }
 
         .schermata { display: none; }
@@ -132,9 +132,22 @@
             cal.appendChild(d);
         }
 
-        function salvaMeteo() {
-            vaiA('home');
-        }
+       function salvaMeteo() {
+    if (emojiScelta === "") {
+        alert("Per favore, scegli un'emoji!"); // Se non hai cliccato nulla, ti avvisa
+        return;
+    }
+
+    // Cerchiamo nella pagina il quadratino di "oggi"
+    const casellaOggi = document.querySelector('.oggi');
+    
+    // Cambiamo il "+" con l'emoji che hai scelto!
+    casellaOggi.innerText = emojiScelta;
+    
+    // Torniamo alla home
+    vaiA('home');
+}
+
         
 let emojiScelta = ""; // Qui dentro l'app si segnerà l'emoji che clicchi
 
