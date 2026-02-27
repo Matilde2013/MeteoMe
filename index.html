@@ -5,64 +5,150 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MeteoMe</title>
     <style>
-        /* STILE PASTELLO */
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #FFF5F8; text-align: center; color: #555; }
-        .schermata { display: none; padding: 20px; }
-        .attiva { display: block; } /* Mostra solo la schermata corrente */
+        /* FONT CORSIVO E COLORI PASTELLO */
+        body { 
+            font-family: 'Comic Sans MS', "Apple Chancery", cursive; 
+            background-color: #FFF5F8; 
+            text-align: center; 
+            color: #555; 
+            margin: 0;
+            padding: 20px;
+        }
         
-        /* NOTIFICHE */
-        .notifica { background: #FFD1DC; border-radius: 10px; margin: 10px auto; padding: 10px; width: 80%; font-size: 14px; border: 1px solid #ffb7b2; }
-        
-        /* CALENDARIO */
-        .griglia { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; padding: 10px; background: white; border-radius: 15px; margin: 10px; }
-        .giorno { aspect-ratio: 1; background: #E2F0CB; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; border: 1px solid #b2e2f2; }
-        
-        /* BOTTONI E INPUT */
-        .emoji-btn { font-size: 30px; background: white; border: 2px solid #B2E2F2; border-radius: 10px; margin: 5px; cursor: pointer; }
-        button.principale { background: #B2E2F2; border: none; padding: 10px 20px; border-radius: 20px; margin-top: 20px; }
+        h1 { color: #FFB7B2; font-size: 28px; }
+
+        .schermata { display: none; }
+        .attiva { display: block; }
+
+        /* LA GRIGLIA DEL CALENDARIO */
+        .griglia { 
+            display: grid; 
+            grid-template-columns: repeat(7, 1fr); 
+            gap: 10px; 
+            padding: 15px; 
+            background: white; 
+            border-radius: 20px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .giorno { 
+            aspect-ratio: 1; 
+            background: #E2F0CB; 
+            border-radius: 10px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 14px; 
+            border: 1px solid #b2e2f2;
+            cursor: pointer;
+        }
+
+        /* Il tasto + speciale per oggi */
+        .oggi { 
+            background-color: #FFDAC1; 
+            font-weight: bold; 
+            font-size: 20px; 
+            color: #ff9aa2;
+        }
+
+        /* AREA EMOJI NUOVA SCHERMATA */
+        .emoji-btn { 
+            font-size: 35px; 
+            background: white; 
+            border: 2px solid #B2E2F2; 
+            border-radius: 15px; 
+            margin: 8px; 
+            padding: 5px;
+            cursor: pointer; 
+        }
+
+        textarea { 
+            width: 85%; 
+            height: 100px;
+            border-radius: 15px; 
+            border: 2px solid #FFDAC1; 
+            padding: 10px; 
+            font-family: inherit;
+        }
+
+        .btn-salva { 
+            background: #B2E2F2; 
+            border: none; 
+            padding: 10px 30px; 
+            border-radius: 20px; 
+            font-family: inherit; 
+            font-size: 18px;
+            margin-top: 15px;
+        }
     </style>
 </head>
 <body>
 
-    <!-- SCHERMATA 1: HOME (IL CLIMA MENSILE) -->
+    <!-- SCHERMATA 1: HOME -->
     <div id="home" class="schermata attiva">
         <h1>Il clima mensile</h1>
-        <div class="notifica">🔔 Hai registrato 17 giorni consecutivi!</div>
         <div class="griglia" id="calendario">
-            <!-- Qui il computer metterà i quadratini -->
+            <!-- I quadratini verranno creati qui sotto -->
         </div>
-        <button class="principale" onclick="vaiA('nuovo-meteo')">Aggiungi Meteo +</button>
     </div>
 
-    <!-- SCHERMATA 2: AGGIUNGI (CHE METEO HAI OGGI?) -->
+    <!-- SCHERMATA 2: AGGIUNGI (IL TUO SECONDO DISEGNO) -->
     <div id="nuovo-meteo" class="schermata">
         <h1>Che meteo hai oggi?</h1>
-        <div>
-            <button class="emoji-btn">😊</button> <button class="emoji-btn">😔</button>
-            <button class="emoji-btn">😡</button> <button class="emoji-btn">🤢</button>
-            <button class="emoji-btn">😐</button> <button class="emoji-btn">😍</button>
+        <div id="scelta-emoji">
+            <!-- Ecco le tue 7 emoji selezionate -->
+            <button class="emoji-btn" onclick="seleziona('😍')">😍</button>
+            <button class="emoji-btn" onclick="seleziona('😁')">😁</button>
+            <button class="emoji-btn" onclick="seleziona('😐')">😐</button>
+            <button class="emoji-btn" onclick="seleziona('😔')">😔</button>
+            <button class="emoji-btn" onclick="seleziona('😭')">😭</button>
+            <button class="emoji-btn" onclick="seleziona('😡')">😡</button>
+            <button class="emoji-btn" onclick="seleziona('🤮')">🤮</button>
         </div>
         <p>C'è qualcosa che vuoi dire?</p>
-        <textarea id="nota" placeholder="Scrivi qui..." style="width: 80%; border-radius: 10px; border: 1px solid #ccc; padding: 10px;"></textarea>
+        <textarea id="nota" placeholder="Scrivi qui..."></textarea>
         <br>
-        <button class="principale" onclick="vaiA('home')">Salva</button>
+        <button class="btn-salva" onclick="salvaMeteo()">Salva</button>
     </div>
 
     <script>
-        // Funzione per cambiare pagina
-        function vaiA(idSchermata) {
+        // Funzione per cambiare schermata
+        function vaiA(id) {
             document.querySelectorAll('.schermata').forEach(s => s.classList.remove('attiva'));
-            document.getElementById(idSchermata).classList.add('attiva');
+            document.getElementById(id).classList.add('attiva');
         }
 
-        // Crea i 30 giorni del calendario
+        // Creiamo il calendario
         const cal = document.getElementById('calendario');
+        const oggiGiorno = 17; // Facciamo finta che oggi sia il 17
+
         for (let i = 1; i <= 30; i++) {
             let d = document.createElement('div');
             d.className = 'giorno';
-            d.innerText = i;
+            
+            if (i === oggiGiorno) {
+                d.classList.add('oggi');
+                d.innerText = "+";
+                d.onclick = () => vaiA('nuovo-meteo');
+            } else if (i < oggiGiorno) {
+                // Esempio: i giorni passati hanno un'emoji a caso per ora
+                d.innerText = "😊"; 
+            } else {
+                d.innerText = i;
+            }
             cal.appendChild(d);
+        }
+
+        function seleziona(emoji) {
+            // Per ora ci serve solo per far capire che l'abbiamo cliccata
+            console.log("Hai scelto: " + emoji);
+        }
+
+        function salvaMeteo() {
+            alert("Salvato! (Prossimamente lo vedrai sul calendario)");
+            vaiA('home');
         }
     </script>
 </body>
 </html>
+
