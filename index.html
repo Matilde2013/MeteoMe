@@ -4,23 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MeteoMe</title>
+    <!-- Carichiamo il font Caveat -->
+    <link href="https://fonts.googleapis.com" rel="stylesheet">
+    
     <style>
-        /* FONT CORSIVO E COLORI PASTELLO */
         body { 
-            font-family: 'Comic Sans MS', "Apple Chancery", cursive; 
+            font-family: 'Caveat', cursive; 
             background-color: #FFF5F8; 
             text-align: center; 
             color: #555; 
             margin: 0;
             padding: 20px;
+            font-size: 22px; /* Il font Caveat è più piccolo, quindi lo ingrandiamo */
         }
         
-        h1 { color: #FFB7B2; font-size: 28px; }
+        h1 { color: #FFB7B2; font-size: 40px; margin-bottom: 5px; }
+        .mese-titolo { font-size: 30px; color: #B2E2F2; margin-bottom: 15px; }
 
         .schermata { display: none; }
         .attiva { display: block; }
 
-        /* LA GRIGLIA DEL CALENDARIO */
         .griglia { 
             display: grid; 
             grid-template-columns: repeat(7, 1fr); 
@@ -38,65 +41,52 @@
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            font-size: 14px; 
+            font-size: 28px; /* Per far vedere bene le emoji */
             border: 1px solid #b2e2f2;
-            cursor: pointer;
         }
 
-        /* Il tasto + speciale per oggi */
         .oggi { 
             background-color: #FFDAC1; 
-            font-weight: bold; 
-            font-size: 20px; 
             color: #ff9aa2;
+            cursor: pointer;
+            font-weight: bold;
         }
 
-        /* AREA EMOJI NUOVA SCHERMATA */
+        .vuoto { background-color: #f9f9f9; border: 1px dashed #eee; }
+
         .emoji-btn { 
-            font-size: 35px; 
+            font-size: 40px; 
             background: white; 
             border: 2px solid #B2E2F2; 
             border-radius: 15px; 
-            margin: 8px; 
-            padding: 5px;
+            margin: 5px; 
             cursor: pointer; 
         }
 
         textarea { 
-            width: 85%; 
-            height: 100px;
-            border-radius: 15px; 
-            border: 2px solid #FFDAC1; 
-            padding: 10px; 
-            font-family: inherit;
+            width: 85%; height: 100px;
+            border-radius: 15px; border: 2px solid #FFDAC1; 
+            padding: 10px; font-family: 'Caveat', cursive; font-size: 20px;
         }
 
         .btn-salva { 
-            background: #B2E2F2; 
-            border: none; 
-            padding: 10px 30px; 
-            border-radius: 20px; 
-            font-family: inherit; 
-            font-size: 18px;
+            background: #B2E2F2; border: none; padding: 10px 30px; 
+            border-radius: 20px; font-family: 'Caveat', cursive; font-size: 24px;
             margin-top: 15px;
         }
     </style>
 </head>
 <body>
 
-    <!-- SCHERMATA 1: HOME -->
     <div id="home" class="schermata attiva">
-        <h1>Il clima mensile</h1>
-        <div class="griglia" id="calendario">
-            <!-- I quadratini verranno creati qui sotto -->
-        </div>
+        <h1>MeteoMe</h1>
+        <div class="mese-titolo">Febbraio 2024</div>
+        <div class="griglia" id="calendario"></div>
     </div>
 
-    <!-- SCHERMATA 2: AGGIUNGI (IL TUO SECONDO DISEGNO) -->
     <div id="nuovo-meteo" class="schermata">
         <h1>Che meteo hai oggi?</h1>
         <div id="scelta-emoji">
-            <!-- Ecco le tue 7 emoji selezionate -->
             <button class="emoji-btn" onclick="seleziona('😍')">😍</button>
             <button class="emoji-btn" onclick="seleziona('😁')">😁</button>
             <button class="emoji-btn" onclick="seleziona('😐')">😐</button>
@@ -112,15 +102,14 @@
     </div>
 
     <script>
-        // Funzione per cambiare schermata
         function vaiA(id) {
             document.querySelectorAll('.schermata').forEach(s => s.classList.remove('attiva'));
             document.getElementById(id).classList.add('attiva');
         }
 
-        // Creiamo il calendario
         const cal = document.getElementById('calendario');
-        const oggiGiorno = 17; // Facciamo finta che oggi sia il 17
+        const oggiGiorno = 12; 
+        const emojiCasuali = ['😍', '😁', '😐', '😔', '😭'];
 
         for (let i = 1; i <= 30; i++) {
             let d = document.createElement('div');
@@ -131,21 +120,17 @@
                 d.innerText = "+";
                 d.onclick = () => vaiA('nuovo-meteo');
             } else if (i < oggiGiorno) {
-                // Esempio: i giorni passati hanno un'emoji a caso per ora
-                d.innerText = "😊"; 
+                // Mettiamo emoji diverse per i giorni passati
+                d.innerText = emojiCasuali[i % emojiCasuali.length]; 
             } else {
-                d.innerText = i;
+                // Giorni futuri: casella vuota
+                d.classList.add('vuoto');
+                d.innerText = "";
             }
             cal.appendChild(d);
         }
 
-        function seleziona(emoji) {
-            // Per ora ci serve solo per far capire che l'abbiamo cliccata
-            console.log("Hai scelto: " + emoji);
-        }
-
         function salvaMeteo() {
-            alert("Salvato! (Prossimamente lo vedrai sul calendario)");
             vaiA('home');
         }
     </script>
