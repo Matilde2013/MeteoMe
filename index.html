@@ -136,11 +136,12 @@
             vaiA('home');
         }
         
-        function seleziona(emoji) {
-            console.log("Hai scelto:", emoji);
-            // Qui puoi aggiungere logica per evidenziare l'emoji scelta
-        }
-    </script>
-</body>
-</html>
+let emojiScelta = ""; // Qui dentro l'app si segnerà l'emoji che clicchi
 
+function seleziona(emoji) {
+    emojiScelta = emoji; // "Ehi app, l'utente ha scelto questa emoji!"
+    
+    // Piccola finezza: evidenziamo il tasto cliccato per farlo capire all'utente
+    document.querySelectorAll('.emoji-btn').forEach(b => b.style.border = "2px solid #B2E2F2");
+    event.target.style.border = "2px solid #FFB7B2"; 
+}
