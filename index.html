@@ -8,7 +8,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap" rel="stylesheet">
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
@@ -18,17 +17,11 @@
             margin: 0; padding: 10px; font-size: 20px; 
         }
         h1 { color: #8A7B4E; font-size: 28px; margin-bottom: 10px; }
-        
-        /* Contenitore principale per evitare che le cose spariscano */
         .schermata { display: none; max-width: 400px; margin: 0 auto; padding-bottom: 100px; }
         .attiva { display: block; }
-
-        /* Navigazione Mese */
         .nav-mese { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px; }
         .mese-titolo { font-size: 20px; color: #A6997A; min-width: 150px; }
-        .btn-nav { background: white; border: 2px solid #E6D5A7; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; color: #8A7B4E; font-size: 18px; }
-        
-        /* Griglia Calendario */
+        .btn-nav { background: white; border: 2px solid #E6D5A7; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; color: #8A7B4E; }
         .griglia { 
             display: grid; grid-template-columns: repeat(7, 1fr); 
             gap: 8px; padding: 15px; background: rgba(255, 255, 255, 0.6); 
@@ -39,21 +32,16 @@
             display: flex; align-items: center; justify-content: center; 
             font-size: 18px; border: 1px solid #E6D5A7; cursor: pointer;
         }
-        .oggi { border: 3px solid #D4B44B; color: #D4B44B; font-weight: 800; }
-        .disabilitato { opacity: 0.5; background: #f9f9f9; }
-
-        /* Recap e Stats */
+        .oggi { border: 3px solid #D4B44B; color: #D4B44B; font-weight: 800; font-size: 24px; }
         .container-box { background: white; padding: 20px; border-radius: 25px; border: 2px solid #E6D5A7; margin-top: 15px; }
         #v-emoji { font-size: 70px; margin: 10px 0; }
         #v-nota { font-size: 18px; color: #665; font-style: italic; line-height: 1.4; word-wrap: break-word; }
-
-        /* Bottoni e Input */
         .emoji-btn { font-size: 30px; background: white; border: 2px solid #E6D5A7; border-radius: 12px; margin: 4px; cursor: pointer; padding: 8px; width: 60px; }
         textarea { width: 100%; height: 100px; border-radius: 15px; border: 2px solid #E6D5A7; padding: 10px; font-family: inherit; font-size: 16px; margin-top: 10px; box-sizing: border-box; }
         .btn-azione { background: #D4B44B; color: white; border: none; padding: 12px 25px; border-radius: 50px; font-family: inherit; font-weight: 600; cursor: pointer; margin: 5px; }
         .menu-bottom { position: fixed; bottom: 20px; left: 0; right: 0; display: flex; justify-content: center; }
-
-        canvas { max-width: 100%; margin-top: 10px; }
+        .frase-analisi { font-size: 16px; color: #8A7B4E; margin-top: 15px; font-style: italic; }
+        canvas { max-width: 100%; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -62,7 +50,7 @@
         <h1>Il clima mensile</h1>
         <div class="nav-mese">
             <button class="btn-nav" onclick="cambiaMese(-1)">&#10094;</button>
-            <div class="mese-titolo" id="display-mese">Caricamento...</div>
+            <div class="mese-titolo" id="display-mese"></div>
             <button class="btn-nav" onclick="cambiaMese(1)">&#10095;</button>
         </div>
         <div class="griglia" id="calendario"></div>
@@ -103,7 +91,9 @@
         <h1>Statistiche</h1>
         <div class="container-box">
             <canvas id="chartTorta"></canvas>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
             <canvas id="chartLinee"></canvas>
+            <div id="frase-riassunto" class="frase-analisi"></div>
         </div>
         <br>
         <button class="btn-azione" onclick="vaiA('home')">Indietro</button>
@@ -121,8 +111,7 @@
 
         function vaiA(id) {
             document.querySelectorAll('.schermata').forEach(s => s.classList.remove('attiva'));
-            const target = document.getElementById(id);
-            if(target) target.classList.add('attiva');
+            document.getElementById(id).classList.add('attiva');
         }
 
         function cambiaMese(n) {
@@ -141,23 +130,23 @@
             cal.innerHTML = "";
             const y = meseVis.getFullYear(), m = meseVis.getMonth();
             document.getElementById('display-mese').innerText = `${nomiMesi[m]} ${y}`;
-            
             const ultimoGiorno = new Date(y, m + 1, 0).getDate();
 
             for (let i = 1; i <= ultimoGiorno; i++) {
                 const cella = document.createElement('div');
                 cella.className = 'giorno';
                 const dati = JSON.parse(localStorage.getItem(`meteo-${y}-${m}-${i}`));
-                
                 const isOggi = (i === realeOggi.getDate() && m === realeOggi.getMonth() && y === realeOggi.getFullYear());
-                if (isOggi) cella.classList.add('oggi');
-
-                if (dati) {
+                
+                if (isOggi) {
+                    cella.classList.add('oggi');
+                    cella.innerText = dati ? dati.emoji : "+";
+                    cella.onclick = () => { giornoSelezionato = i; dati ? apriRecap(dati) : apriEditor(null); };
+                } else if (dati) {
                     cella.innerText = dati.emoji;
                     cella.onclick = () => { giornoSelezionato = i; apriRecap(dati); };
                 } else {
-                    cella.innerText = isOggi ? "+" : i;
-                    if (!isOggi) cella.classList.add('disabilitato');
+                    cella.innerText = ""; // Vuoto per i giorni passati senza dati
                     cella.onclick = () => { giornoSelezionato = i; apriEditor(null); };
                 }
                 cal.appendChild(cella);
@@ -177,51 +166,59 @@
         }
 
         function apriEditor(dati) {
-            document.getElementById('titolo-inserimento').innerText = `Giorno ${giornoSelezionato}`;
+            document.getElementById('titolo-inserimento').innerText = `Giorno ${giornoSelezionato} ${nomiMesi[meseVis.getMonth()]}`;
             document.getElementById('nota').value = dati ? dati.nota : "";
             emojiSelezionata = dati ? dati.emoji : "";
-            
             document.querySelectorAll('.emoji-btn').forEach(btn => {
                 btn.style.borderColor = (btn.innerText === emojiSelezionata) ? "#D4B44B" : "#E6D5A7";
             });
-            
             vaiA('nuovo-meteo');
         }
 
         function salvaMeteo() {
             if (!emojiSelezionata) return alert("Scegli un'emoji!");
             const chiave = `meteo-${meseVis.getFullYear()}-${meseVis.getMonth()}-${giornoSelezionato}`;
-            localStorage.setItem(chiave, JSON.stringify({
-                emoji: emojiSelezionata,
-                nota: document.getElementById('nota').value
-            }));
+            localStorage.setItem(chiave, JSON.stringify({ emoji: emojiSelezionata, nota: document.getElementById('nota').value }));
             renderCal();
             vaiA('home');
         }
 
         function apriStats() {
             vaiA('stats');
-            // Logica grafici semplificata per evitare errori
             setTimeout(() => {
-                let dati30 = [], labels30 = [], conteggio = {};
-                for (let i = 6; i >= 0; i--) {
+                let dati30 = [], labels30 = [], conteggio30 = {};
+                for (let i = 29; i >= 0; i--) {
                     let d = new Date(); d.setDate(realeOggi.getDate() - i);
                     let s = JSON.parse(localStorage.getItem(`meteo-${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`));
-                    if (s) conteggio[s.emoji] = (conteggio[s.emoji] || 0) + 1;
+                    labels30.push(d.getDate());
+                    if (s) {
+                        dati30.push(pesiEmoji[s.emoji]);
+                        conteggio30[s.emoji] = (conteggio30[s.emoji] || 0) + 1;
+                    } else dati30.push(null);
                 }
 
                 if (chartT) chartT.destroy();
                 chartT = new Chart(document.getElementById('chartTorta'), {
                     type: 'doughnut',
-                    data: {
-                        labels: Object.keys(conteggio),
-                        datasets: [{ data: Object.values(conteggio), backgroundColor: ['#FFECB3', '#B2E2F2', '#E2F0CB', '#FFDAC1'] }]
-                    }
+                    data: { labels: Object.keys(conteggio30), datasets: [{ data: Object.values(conteggio30), backgroundColor: ['#FFECB3', '#B2E2F2', '#E2F0CB', '#FFDAC1', '#FFB7B2'] }] }
                 });
+
+                if (chartL) chartL.destroy();
+                chartL = new Chart(document.getElementById('chartLinee'), {
+                    type: 'line',
+                    data: { labels: labels30, datasets: [{ data: dati30, borderColor: '#D4B44B', tension: 0.4, fill: false, spanGaps: true }] },
+                    options: { plugins: { legend: { display: false } }, scales: { y: { min: 1, max: 7, display: false }, x: { ticks: { font: { size: 10 } } } } }
+                });
+
+                const keys = Object.keys(conteggio30);
+                const riassunto = document.getElementById('frase-riassunto');
+                if (keys.length > 0) {
+                    const topEmoji = keys.reduce((a, b) => conteggio30[a] > conteggio30[b] ? a : b);
+                    riassunto.innerText = `L'ultimo mese è stato prevalentemente ${topEmoji}`;
+                } else riassunto.innerText = "Inserisci dati per l'analisi.";
             }, 100);
         }
 
-        // Avvio iniziale
         renderCal();
     </script>
 </body>
