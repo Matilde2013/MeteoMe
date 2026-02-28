@@ -13,14 +13,23 @@
         body { 
             font-family: 'Inter', sans-serif; 
             font-weight: 600; 
-            background-color: #FFF9E5; /* Giallino delicato */
+            background-color: #FFF9E5; 
             text-align: center; 
             color: #445; 
             margin: 0; padding: 20px; font-size: 20px; 
         }
         
         h1 { color: #8A7B4E; font-size: 32px; margin-bottom: 5px; }
-        .mese-titolo { font-size: 22px; color: #A6997A; margin-bottom: 20px; }
+        
+        .nav-mese { 
+            display: flex; align-items: center; justify-content: center; gap: 20px;
+            margin-bottom: 20px;
+        }
+        .mese-titolo { font-size: 22px; color: #A6997A; min-width: 150px; }
+        .btn-nav { 
+            background: none; border: 2px solid #E6D5A7; border-radius: 50%; 
+            width: 35px; height: 35px; cursor: pointer; color: #8A7B4E; font-weight: bold;
+        }
 
         .schermata { display: none; }
         .attiva { display: block; }
@@ -37,11 +46,8 @@
             font-size: 24px; border: 1px solid #E6D5A7; cursor: pointer;
         }
 
-        /* Giorno di oggi */
         .oggi { border: 3px solid #D4B44B; color: #D4B44B; font-size: 30px; }
-        
-        /* Giorni passati senza dati o futuri */
-        .disabilitato { opacity: 0.3; cursor: default; }
+        .disabilitato { opacity: 0.2; cursor: default; }
 
         .emoji-btn { 
             font-size: 35px; background: white; border: 2px solid #E6D5A7; 
@@ -72,12 +78,18 @@
 </head>
 <body>
 
+    <!-- 1. HOME -->
     <div id="home" class="schermata attiva">
         <h1>Il clima mensile</h1>
-        <div class="mese-titolo" id="display-mese"></div>
+        <div class="nav-mese">
+            <button class="btn-nav" onclick="cambiaMese(-1)">&#10094;</button>
+            <div class="mese-titolo" id="display-mese"></div>
+            <button class="btn-nav" onclick="cambiaMese(1)">&#10095;</button>
+        </div>
         <div class="griglia" id="calendario"></div>
     </div>
 
+    <!-- 2. INSERIMENTO -->
     <div id="nuovo-meteo" class="schermata">
         <h1 id="titolo-inserimento">Che meteo hai oggi?</h1>
         <div id="scelta-emoji">
@@ -96,6 +108,7 @@
         <button class="btn-azione" style="background:#E6D5A7; color:#445" onclick="vaiA('home')">Annulla</button>
     </div>
 
+    <!-- 3. DETTAGLIO -->
     <div id="dettaglio-giorno" class="schermata">
         <h1 id="data-titolo" class="data-dettaglio">Data</h1>
         <div class="box-diario">
@@ -107,21 +120,21 @@
     </div>
 
     <script>
-        const dataAttuale = new Date();
-        const giornoOggi = dataAttuale.getDate();
-        const meseOggi = dataAttuale.getMonth();
-        const annoOggi = dataAttuale.getFullYear();
+        const realeOggi = new Date();
+        let meseVisualizzato = new Date(realeOggi.getFullYear(), realeOggi.getMonth(), 1);
         
         const nomiMesi = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
-        document.getElementById('display-mese').innerText = `${nomiMesi[meseOggi]} ${annoOggi}`;
-
-        const giorniMese = new Date(annoOggi, meseOggi + 1, 0).getDate();
-        let giornoInModifica = giornoOggi;
+        let giornoSelezionato = 1;
         let emojiSelezionata = "";
 
         function vaiA(id) {
             document.querySelectorAll('.schermata').forEach(s => s.classList.remove('attiva'));
             document.getElementById(id).classList.add('attiva');
+        }
+
+        function cambiaMese(direzione) {
+            meseVisualizzato.setMonth(meseVisualizzato.getMonth() + direzione);
+            renderizzaCalendario();
         }
 
         function seleziona(emoji, elemento) {
@@ -131,15 +144,17 @@
         }
 
         function salvaMeteo() {
-            if (emojiSelezionata === "") { alert("Scegli un'emoji!"); return; }
+            if (!emojiSelezionata) { alert("Scegli un'emoji!"); return; }
+            const chiave = `meteo-${meseVisualizzato.getFullYear()}-${meseVisualizzato.getMonth()}-${giornoSelezionato}`;
             const dati = { emoji: emojiSelezionata, nota: document.getElementById('nota').value };
-            localStorage.setItem(`meteo-${annoOggi}-${meseOggi}-${giornoInModifica}`, JSON.stringify(dati));
-            location.reload();
+            localStorage.setItem(chiave, JSON.stringify(dati));
+            renderizzaCalendario();
+            vaiA('home');
         }
 
         function mostraDettaglio(giorno, dati) {
-            giornoInModifica = giorno;
-            document.getElementById('data-titolo').innerText = `${giorno} ${nomiMesi[meseOggi]}`;
+            giornoSelezionato = giorno;
+            document.getElementById('data-titolo').innerText = `${giorno} ${nomiMesi[meseVisualizzato.getMonth()]}`;
             document.getElementById('emoji-display').innerText = dati.emoji;
             document.getElementById('nota-display').innerText = dati.nota || "Nessuna nota.";
             document.getElementById('btn-modifica').onclick = () => preparaModifica(giorno, dati);
@@ -147,50 +162,62 @@
         }
 
         function preparaModifica(giorno, dati) {
-            giornoInModifica = giorno;
-            document.getElementById('titolo-inserimento').innerText = (giorno === giornoOggi) ? "Che meteo hai oggi?" : `Modifica meteo del ${giorno}`;
+            giornoSelezionato = giorno;
+            const isOggi = (giorno === realeOggi.getDate() && meseVisualizzato.getMonth() === realeOggi.getMonth() && meseVisualizzato.getFullYear() === realeOggi.getFullYear());
+            document.getElementById('titolo-inserimento').innerText = isOggi ? "Che meteo hai oggi?" : `Modifica meteo del ${giorno}`;
             document.getElementById('nota').value = dati.nota;
             seleziona(dati.emoji, null);
             document.querySelectorAll('.emoji-btn').forEach(btn => { if(btn.innerText === dati.emoji) btn.style.borderColor = "#D4B44B"; });
             vaiA('nuovo-meteo');
         }
 
-        const cal = document.getElementById('calendario');
-        for (let i = 1; i <= giorniMese; i++) {
-            let d = document.createElement('div');
-            d.className = 'giorno';
-            const salvati = JSON.parse(localStorage.getItem(`meteo-${annoOggi}-${meseOggi}-${i}`));
+        function renderizzaCalendario() {
+            const cal = document.getElementById('calendario');
+            cal.innerHTML = "";
+            const anno = meseVisualizzato.getFullYear();
+            const mese = meseVisualizzato.getMonth();
+            
+            document.getElementById('display-mese').innerText = `${nomiMesi[mese]} ${anno}`;
+            const ultimoGiorno = new Date(anno, mese + 1, 0).getDate();
 
-            if (i === giornoOggi) {
-                d.classList.add('oggi');
-                d.innerText = salvati ? salvati.emoji : "+";
-                d.onclick = () => {
-                    giornoInModifica = i;
-                    if(salvati) mostraDettaglio(i, salvati);
-                    else {
-                        document.getElementById('titolo-inserimento').innerText = "Che meteo hai oggi?";
-                        document.getElementById('nota').value = "";
-                        vaiA('nuovo-meteo');
-                    }
-                };
-            } else if (salvati) {
-                // Giorno passato con dati: cliccabile per visualizzare/modificare
-                d.innerText = salvati.emoji;
-                d.onclick = () => mostraDettaglio(i, salvati);
-            } else if (i < giornoOggi) {
-                // Giorno passato senza dati: solo numero e non cliccabile
-                d.innerText = i;
-                d.classList.add('disabilitato');
-            } else {
-                // Giorno futuro: solo numero e non cliccabile
-                d.innerText = i;
-                d.classList.add('disabilitato');
+            for (let i = 1; i <= ultimoGiorno; i++) {
+                let d = document.createElement('div');
+                d.className = 'giorno';
+                const chiave = `meteo-${anno}-${mese}-${i}`;
+                const salvati = JSON.parse(localStorage.getItem(chiave));
+                
+                const isOggi = (i === realeOggi.getDate() && mese === realeOggi.getMonth() && anno === realeOggi.getFullYear());
+                const isPassato = new Date(anno, mese, i) < new Date(realeOggi.getFullYear(), realeOggi.getMonth(), realeOggi.getDate());
+
+                if (isOggi) {
+                    d.classList.add('oggi');
+                    d.innerText = salvati ? salvati.emoji : "+";
+                    d.onclick = () => {
+                        giornoSelezionato = i;
+                        if(salvati) mostraDettaglio(i, salvati);
+                        else {
+                            document.getElementById('titolo-inserimento').innerText = "Che meteo hai oggi?";
+                            document.getElementById('nota').value = "";
+                            emojiSelezionata = "";
+                            document.querySelectorAll('.emoji-btn').forEach(btn => btn.style.borderColor = "#E6D5A7");
+                            vaiA('nuovo-meteo');
+                        }
+                    };
+                } else if (salvati) {
+                    d.innerText = salvati.emoji;
+                    d.onclick = () => mostraDettaglio(i, salvati);
+                } else {
+                    d.innerText = i;
+                    d.classList.add('disabilitato');
+                    // Solo se è passato e ha dati è cliccabile (gestito sopra). 
+                    // Se è passato/futuro senza dati, non fa nulla.
+                }
+                cal.appendChild(d);
             }
-            cal.appendChild(d);
         }
+
+        renderizzaCalendario();
     </script>
 </body>
 </html>
-
-
 
