@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MeteoMe</title>
     
-    <!-- Librerie e Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
         body { 
@@ -17,17 +17,12 @@
             background-color: #FFF9E5; text-align: center; color: #445; 
             margin: 0; padding: 10px; font-size: 20px; 
         }
-        
         h1 { color: #8A7B4E; font-size: 32px; margin-bottom: 5px; }
-        
         .nav-mese { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px; }
         .mese-titolo { font-size: 22px; color: #A6997A; min-width: 140px; }
         .btn-nav { background: none; border: 2px solid #E6D5A7; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; color: #8A7B4E; }
-
-        .schermata { display: none; padding-bottom: 100px; }
+        .schermata { display: none; padding-bottom: 120px; }
         .attiva { display: block; }
-
-        /* Calendario */
         .griglia { 
             display: grid; grid-template-columns: repeat(7, 1fr); 
             gap: 10px; padding: 15px; background: rgba(255, 255, 255, 0.7); 
@@ -40,23 +35,17 @@
         }
         .oggi { border: 3px solid #D4B44B; color: #D4B44B; font-size: 28px; }
         .disabilitato { opacity: 0.2; cursor: default; }
-
-        /* Stats */
         .container-stats { max-width: 400px; margin: 0 auto; background: white; padding: 20px; border-radius: 25px; border: 2px solid #E6D5A7; }
         .frase-analisi { font-size: 18px; color: #665; font-style: italic; margin-top: 20px; padding: 15px; border-top: 1px solid #eee; }
-
-        /* Inserimento */
         .emoji-btn { font-size: 32px; background: white; border: 2px solid #E6D5A7; border-radius: 15px; margin: 5px; cursor: pointer; padding: 10px; }
         textarea { width: 85%; height: 100px; border-radius: 15px; border: 2px solid #E6D5A7; padding: 10px; font-family: inherit; font-weight: 600; font-size: 18px; outline: none; margin-top: 15px; }
-
         .btn-azione { background: #D4B44B; color: white; border: none; padding: 12px 25px; border-radius: 50px; font-family: inherit; font-weight: 600; font-size: 20px; margin: 10px 5px; cursor: pointer; }
-        
-        .menu-bottom { position: fixed; bottom: 20px; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .menu-bottom { position: fixed; bottom: 20px; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        canvas { max-width: 100%; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
-    <!-- 1. HOME -->
     <div id="home" class="schermata attiva">
         <h1>Il clima mensile</h1>
         <div class="nav-mese">
@@ -65,20 +54,17 @@
             <button class="btn-nav" onclick="cambiaMese(1)">&#10095;</button>
         </div>
         <div class="griglia" id="calendario"></div>
-        
         <div class="menu-bottom">
-            <button class="btn-azione" style="background:#8A7B4E; font-size: 16px; padding: 8px 20px;" onclick="attivaNotificheManualmente()">Attiva Notifiche 🔔</button>
             <button class="btn-azione" onclick="apriStats()">Statistiche 📊</button>
         </div>
     </div>
 
-    <!-- 2. STATISTICHE -->
     <div id="stats" class="schermata">
         <h1>Negli ultimi tempi...</h1>
         <div class="container-stats">
-            <p style="font-size: 14px;">Questa settimana è stata:</p>
+            <p style="font-size: 14px;">Umore prevalente (7gg):</p>
             <canvas id="chartTorta"></canvas>
-            <p style="font-size: 14px; margin-top: 20px;">Andamento meteo-umore:</p>
+            <p style="font-size: 14px; margin-top: 20px;">Andamento meteo-umore (30gg):</p>
             <canvas id="chartLinee"></canvas>
             <div id="frase-riassunto" class="frase-analisi"></div>
         </div>
@@ -86,7 +72,6 @@
         <button class="btn-azione" onclick="vaiA('home')">Indietro</button>
     </div>
 
-    <!-- 3. INSERIMENTO -->
     <div id="nuovo-meteo" class="schermata">
         <h1 id="titolo-inserimento">Che meteo hai oggi?</h1>
         <div id="scelta-emoji">
@@ -105,16 +90,11 @@
     </div>
 
     <script>
-        // Registra Service Worker per notifiche
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').then(() => console.log("SW Pronto"));
-        }
-
         const realeOggi = new Date();
         let meseVis = new Date(realeOggi.getFullYear(), realeOggi.getMonth(), 1);
         const nomiMesi = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
         const pesiEmoji = { '🌈': 7, '🌞': 6, '⛅': 5, '☁': 4, '🌧': 3, '🌩': 2, '🌪': 1 };
-        let giornoInModifica = 1, emojiSelezionata = "", chartT, chartL;
+        let giornoInModifica = 1, emojiSelezionata = "", chartT = null, chartL = null;
 
         function vaiA(id) {
             document.querySelectorAll('.schermata').forEach(s => s.classList.remove('attiva'));
@@ -135,7 +115,6 @@
             localStorage.setItem(chiave, JSON.stringify({emoji: emojiSelezionata, nota: document.getElementById('nota').value}));
             renderCal(); 
             vaiA('home');
-            controllaTraguardi();
         }
 
         function renderCal() {
@@ -143,97 +122,106 @@
             const y = meseVis.getFullYear(), m = meseVis.getMonth();
             document.getElementById('display-mese').innerText = `${nomiMesi[m]} ${y}`;
             const fineMese = new Date(y, m + 1, 0).getDate();
-
             for (let i = 1; i <= fineMese; i++) {
                 let d = document.createElement('div'); d.className = 'giorno';
                 const s = JSON.parse(localStorage.getItem(`meteo-${y}-${m}-${i}`));
                 const isOggi = (i === realeOggi.getDate() && m === realeOggi.getMonth() && y === realeOggi.getFullYear());
-
-                if (isOggi) {
-                    d.classList.add('oggi');
-                    d.innerText = s ? s.emoji : "+";
-                    d.onclick = () => { giornoInModifica = i; apriEditor(s, true); };
-                } else if (s) {
-                    d.innerText = s.emoji;
+                
+                if (isOggi) { 
+                    d.classList.add('oggi'); 
+                    d.innerText = s ? s.emoji : "+"; 
+                    d.onclick = () => { giornoInModifica = i; apriEditor(s, true); }; 
+                } else if (s) { 
+                    d.innerText = s.emoji; 
+                    d.onclick = () => { giornoInModifica = i; apriEditor(s, false); }; 
+                } else { 
+                    d.innerText = i; 
+                    d.classList.add('disabilitato'); 
+                    // Permetti comunque di cliccare i giorni passati/futuri del mese corrente se vuoi
                     d.onclick = () => { giornoInModifica = i; apriEditor(s, false); };
-                } else {
-                    d.innerText = i; d.classList.add('disabilitato');
                 }
                 cal.appendChild(d);
             }
         }
 
         function apriEditor(s, oggi) {
-            document.getElementById('titolo-inserimento').innerText = oggi ? "Che meteo hai oggi?" : `Modifica giorno ${giornoInModifica}`;
+            document.getElementById('titolo-inserimento').innerText = oggi ? "Che meteo hai oggi?" : `Giorno ${giornoInModifica}`;
             document.getElementById('nota').value = s ? s.nota : "";
             emojiSelezionata = s ? s.emoji : "";
-            document.querySelectorAll('.emoji-btn').forEach(btn => {
-                btn.style.borderColor = (btn.innerText === emojiSelezionata) ? "#D4B44B" : "#E6D5A7";
-            });
+            document.querySelectorAll('.emoji-btn').forEach(btn => btn.style.borderColor = (btn.innerText === emojiSelezionata) ? "#D4B44B" : "#E6D5A7");
             vaiA('nuovo-meteo');
         }
 
         function apriStats() {
             vaiA('stats');
             let dati30 = [], labels30 = [], conteggio7 = {};
+            
+            // Ciclo per recuperare gli ultimi 30 giorni
             for (let i = 29; i >= 0; i--) {
-                let d = new Date(); d.setDate(realeOggi.getDate() - i);
+                let d = new Date();
+                d.setDate(realeOggi.getDate() - i);
                 let s = JSON.parse(localStorage.getItem(`meteo-${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`));
+                
+                labels30.push(d.getDate());
                 if (s) {
                     dati30.push(pesiEmoji[s.emoji]);
                     if (i < 7) conteggio7[s.emoji] = (conteggio7[s.emoji] || 0) + 1;
-                } else dati30.push(null);
-                labels30.push(d.getDate());
+                } else {
+                    dati30.push(null);
+                }
             }
 
+            // GRAFICO A TORTA (7 GIORNI)
             if (chartT) chartT.destroy();
+            const keysT = Object.keys(conteggio7);
             chartT = new Chart(document.getElementById('chartTorta'), {
-                type: 'pie',
-                data: { labels: Object.keys(conteggio7), datasets: [{ data: Object.values(conteggio7), backgroundColor: ['#FFECB3', '#B2E2F2', '#E2F0CB', '#FFDAC1', '#FFB7B2'] }] }
+                type: 'doughnut',
+                data: {
+                    labels: keysT,
+                    datasets: [{
+                        data: Object.values(conteggio7),
+                        backgroundColor: ['#FFECB3', '#B2E2F2', '#E2F0CB', '#FFDAC1', '#FFB7B2', '#D1C4E9', '#F8BBD0']
+                    }]
+                },
+                options: { plugins: { legend: { position: 'bottom' } } }
             });
 
+            // GRAFICO A LINEE (30 GIORNI)
             if (chartL) chartL.destroy();
             chartL = new Chart(document.getElementById('chartLinee'), {
                 type: 'line',
-                data: { labels: labels30, datasets: [{ data: dati30, borderColor: '#D4B44B', tension: 0.3, fill: false, spanGaps: true }] },
-                options: { plugins: { legend: { display: false } }, scales: { y: { display: false, min: 1, max: 7 } } }
-            });
-
-            const keys = Object.keys(conteggio7);
-            if (keys.length > 0) {
-                const prev = keys.reduce((a, b) => conteggio7[a] > conteggio7[b] ? a : b);
-                document.getElementById('frase-riassunto').innerText = `Questa settimana è stata prevalentemente ${prev}!`;
-            } else {
-                document.getElementById('frase-riassunto').innerText = "Ancora nessun dato per questa settimana.";
-            }
-        }
-
-        // Funzioni Notifiche
-        function attivaNotificheManualmente() {
-            Notification.requestPermission().then(permission => {
-                if (permission === "granted") {
-                    inviaNotifica("MeteoMe", "Notifiche attivate con successo! 🌈");
-                } else {
-                    alert("Devi autorizzare le notifiche dalle impostazioni del browser.");
+                data: {
+                    labels: labels30,
+                    datasets: [{
+                        label: 'Umore',
+                        data: dati30,
+                        borderColor: '#D4B44B',
+                        backgroundColor: '#D4B44B',
+                        tension: 0.4,
+                        fill: false,
+                        spanGaps: true
+                    }]
+                },
+                options: {
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { 
+                            min: 1, max: 7,
+                            ticks: { callback: (val) => Object.keys(pesiEmoji).find(k => pesiEmoji[k] === val) || '' }
+                        }
+                    }
                 }
             });
-        }
 
-        function inviaNotifica(tit, msg) {
-            if (Notification.permission === "granted") {
-                navigator.serviceWorker.ready.then(reg => {
-                    reg.showNotification(tit, { body: msg, icon: 'https://cdn-icons-png.flaticon.com' });
-                });
+            // ANALISI TESTUALE
+            const keys = Object.keys(conteggio7);
+            const riassunto = document.getElementById('frase-riassunto');
+            if (keys.length > 0) {
+                const topEmoji = keys.reduce((a, b) => conteggio7[a] > conteggio7[b] ? a : b);
+                riassunto.innerText = `Questa settimana il tuo meteo interiore è stato principalmente ${topEmoji}.`;
+            } else {
+                riassunto.innerText = "Inserisci qualche dato per vedere l'analisi!";
             }
-        }
-
-        function controllaTraguardi() {
-            let streak = 0;
-            for(let i=0; i<7; i++) {
-                let d = new Date(); d.setDate(realeOggi.getDate()-i);
-                if(localStorage.getItem(`meteo-${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`)) streak++;
-            }
-            if(streak === 7) inviaNotifica("Ottimo lavoro!", "Hai registrato 7 giorni consecutivi! 🌈");
         }
 
         renderCal();
