@@ -5,218 +5,165 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MeteoMe</title>
     
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net"></script>
     
     <style>
-        body { 
-            font-family: 'Inter', sans-serif; 
-            font-weight: 600; 
-            background-color: #FFF9E5; 
-            text-align: center; 
-            color: #445; 
-            margin: 0; padding: 20px; font-size: 20px; 
-        }
-        
-        h1 { color: #8A7B4E; font-size: 32px; margin-bottom: 5px; }
-        
-        .nav-mese { 
-            display: flex; align-items: center; justify-content: center; gap: 20px;
-            margin-bottom: 20px;
-        }
-        .mese-titolo { font-size: 22px; color: #A6997A; min-width: 150px; }
-        .btn-nav { 
-            background: none; border: 2px solid #E6D5A7; border-radius: 50%; 
-            width: 35px; height: 35px; cursor: pointer; color: #8A7B4E; font-weight: bold;
-        }
-
-        .schermata { display: none; }
+        body { font-family: 'Inter', sans-serif; font-weight: 600; background-color: #FFF9E5; text-align: center; color: #445; margin: 0; padding: 10px; }
+        .schermata { display: none; padding: 10px; }
         .attiva { display: block; }
-
-        .griglia { 
-            display: grid; grid-template-columns: repeat(7, 1fr); 
-            gap: 10px; padding: 15px; background: rgba(255, 255, 255, 0.7); 
-            border-radius: 20px; max-width: 400px; margin: 0 auto;
-        }
-
-        .giorno { 
-            aspect-ratio: 1; background: #fff; border-radius: 12px; 
-            display: flex; align-items: center; justify-content: center; 
-            font-size: 24px; border: 1px solid #E6D5A7; cursor: pointer;
-        }
-
-        .oggi { border: 3px solid #D4B44B; color: #D4B44B; font-size: 30px; }
+        h1 { color: #8A7B4E; font-size: 28px; margin: 10px 0; }
+        
+        /* Calendario */
+        .nav-mese { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 15px; }
+        .griglia { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; padding: 15px; background: rgba(255, 255, 255, 0.7); border-radius: 20px; max-width: 380px; margin: 0 auto; }
+        .giorno { aspect-ratio: 1; background: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid #E6D5A7; cursor: pointer; }
+        .oggi { border: 3px solid #D4B44B; color: #D4B44B; }
         .disabilitato { opacity: 0.2; cursor: default; }
 
-        .emoji-btn { 
-            font-size: 35px; background: white; border: 2px solid #E6D5A7; 
-            border-radius: 15px; margin: 5px; cursor: pointer; padding: 10px;
-        }
+        /* Statistiche */
+        .container-grafici { max-width: 400px; margin: 0 auto; background: white; padding: 20px; border-radius: 25px; border: 2px solid #E6D5A7; }
+        canvas { margin-bottom: 25px; }
+        .frase-analisi { font-size: 18px; color: #665; font-style: italic; margin-top: 15px; padding: 10px; border-top: 1px solid #eee; }
 
-        textarea { 
-            width: 85%; height: 100px; border-radius: 15px; 
-            border: 2px solid #E6D5A7; padding: 10px; 
-            font-family: 'Inter', sans-serif; font-weight: 600; font-size: 18px; outline: none;
-        }
-
-        .btn-azione { 
-            background: #D4B44B; color: white; border: none; padding: 12px 25px; 
-            border-radius: 50px; font-family: 'Inter', sans-serif; font-weight: 600;
-            font-size: 20px; margin: 10px 5px; cursor: pointer;
-        }
-
-        .box-diario {
-            background: white; border: 2px solid #E6D5A7; border-radius: 25px;
-            padding: 20px; margin: 20px auto; width: 90%; max-width: 400px;
-            display: flex; flex-direction: column; align-items: center; gap: 15px;
-        }
-        .emoji-grande { font-size: 90px; }
-        .testo-nota { font-size: 22px; text-align: center; }
-        .data-dettaglio { font-size: 32px; color: #8A7B4E; margin-bottom: 20px; }
+        /* Bottoni */
+        .btn-azione { background: #D4B44B; color: white; border: none; padding: 12px 20px; border-radius: 50px; font-weight: 600; cursor: pointer; margin: 5px; }
+        .emoji-btn { font-size: 30px; background: white; border: 2px solid #E6D5A7; border-radius: 12px; margin: 4px; cursor: pointer; padding: 8px; }
+        .nav-inferiore { position: fixed; bottom: 20px; left: 0; right: 0; }
+        textarea { width: 85%; height: 80px; border-radius: 15px; border: 2px solid #E6D5A7; padding: 10px; font-family: inherit; font-weight: 600; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <!-- 1. HOME -->
+    <!-- HOME -->
     <div id="home" class="schermata attiva">
         <h1>Il clima mensile</h1>
         <div class="nav-mese">
-            <button class="btn-nav" onclick="cambiaMese(-1)">&#10094;</button>
-            <div class="mese-titolo" id="display-mese"></div>
-            <button class="btn-nav" onclick="cambiaMese(1)">&#10095;</button>
+            <button class="btn-azione" style="padding: 5px 15px;" onclick="cambiaMese(-1)">&#10094;</button>
+            <span id="display-mese"></span>
+            <button class="btn-azione" style="padding: 5px 15px;" onclick="cambiaMese(1)">&#10095;</button>
         </div>
         <div class="griglia" id="calendario"></div>
+        <div class="nav-inferiore">
+            <button class="btn-azione" onclick="apriStats()">Vedi Statistiche 📊</button>
+        </div>
     </div>
 
-    <!-- 2. INSERIMENTO -->
+    <!-- STATISTICHE (Ispirata al tuo disegno) -->
+    <div id="stats" class="schermata">
+        <h1>Negli ultimi tempi...</h1>
+        <div class="container-grafici">
+            <p style="font-size: 14px; color: #887;">Questa settimana è stata:</p>
+            <canvas id="chartTorta"></canvas>
+            
+            <p style="font-size: 14px; color: #887;">Andamento ultimi 30 giorni:</p>
+            <canvas id="chartLinee"></canvas>
+            
+            <div id="frase-riassunto" class="frase-analisi"></div>
+        </div>
+        <br>
+        <button class="btn-azione" onclick="vaiA('home')">Torna al Calendario</button>
+    </div>
+
+    <!-- INSERIMENTO -->
     <div id="nuovo-meteo" class="schermata">
         <h1 id="titolo-inserimento">Che meteo hai oggi?</h1>
         <div id="scelta-emoji">
-            <button class="emoji-btn" onclick="seleziona('🌈', this)">🌈</button>
-            <button class="emoji-btn" onclick="seleziona('🌞', this)">🌞</button>
-            <button class="emoji-btn" onclick="seleziona('⛅', this)">⛅</button>
-            <button class="emoji-btn" onclick="seleziona('☁', this)">☁</button>
-            <button class="emoji-btn" onclick="seleziona('🌧', this)">🌧</button>
-            <button class="emoji-btn" onclick="seleziona('🌩', this)">🌩</button>
-            <button class="emoji-btn" onclick="seleziona('🌪', this)">🌪</button>
+            <button class="emoji-btn" onclick="seleziona('🌈')">🌈</button>
+            <button class="emoji-btn" onclick="seleziona('🌞')">🌞</button>
+            <button class="emoji-btn" onclick="seleziona('⛅')">⛅</button>
+            <button class="emoji-btn" onclick="seleziona('☁')">☁</button>
+            <button class="emoji-btn" onclick="seleziona('🌧')">🌧</button>
+            <button class="emoji-btn" onclick="seleziona('🌩')">🌩</button>
+            <button class="emoji-btn" onclick="seleziona('🌪')">🌪</button>
         </div>
-        <p>C'è qualcosa che vuoi dire?</p>
-        <textarea id="nota" placeholder="Scrivi qui..."></textarea>
-        <br>
+        <textarea id="nota" placeholder="Scrivi una nota..."></textarea><br>
         <button class="btn-azione" onclick="salvaMeteo()">Salva</button>
-        <button class="btn-azione" style="background:#E6D5A7; color:#445" onclick="vaiA('home')">Annulla</button>
-    </div>
-
-    <!-- 3. DETTAGLIO -->
-    <div id="dettaglio-giorno" class="schermata">
-        <h1 id="data-titolo" class="data-dettaglio">Data</h1>
-        <div class="box-diario">
-            <div id="emoji-display" class="emoji-grande"></div>
-            <div id="nota-display" class="testo-nota"></div>
-        </div>
-        <button class="btn-azione" id="btn-modifica">Modifica</button>
-        <button class="btn-azione" style="background:#E6D5A7; color:#445" onclick="vaiA('home')">Indietro</button>
+        <button class="btn-azione" style="background:#E6D5A7;" onclick="vaiA('home')">Annulla</button>
     </div>
 
     <script>
         const realeOggi = new Date();
-        let meseVisualizzato = new Date(realeOggi.getFullYear(), realeOggi.getMonth(), 1);
-        
+        let meseVis = new Date(realeOggi.getFullYear(), realeOggi.getMonth(), 1);
+        let giornoSel = 1, emojiSel = "", chartT, chartL;
         const nomiMesi = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
-        let giornoSelezionato = 1;
-        let emojiSelezionata = "";
+        const pesiEmoji = { '🌈': 7, '🌞': 6, '⛅': 5, '☁': 4, '🌧': 3, '🌩': 2, '🌪': 1 };
 
         function vaiA(id) {
             document.querySelectorAll('.schermata').forEach(s => s.classList.remove('attiva'));
             document.getElementById(id).classList.add('attiva');
         }
 
-        function cambiaMese(direzione) {
-            meseVisualizzato.setMonth(meseVisualizzato.getMonth() + direzione);
-            renderizzaCalendario();
-        }
+        function cambiaMese(d) { meseVis.setMonth(meseVis.getMonth() + d); renderCal(); }
 
-        function seleziona(emoji, elemento) {
-            emojiSelezionata = emoji;
-            document.querySelectorAll('.emoji-btn').forEach(btn => btn.style.borderColor = "#E6D5A7");
-            if(elemento) elemento.style.borderColor = "#D4B44B";
+        function seleziona(e) { 
+            emojiSel = e; 
+            document.querySelectorAll('.emoji-btn').forEach(b => b.style.borderColor = b.innerText === e ? "#D4B44B" : "#E6D5A7"); 
         }
 
         function salvaMeteo() {
-            if (!emojiSelezionata) { alert("Scegli un'emoji!"); return; }
-            const chiave = `meteo-${meseVisualizzato.getFullYear()}-${meseVisualizzato.getMonth()}-${giornoSelezionato}`;
-            const dati = { emoji: emojiSelezionata, nota: document.getElementById('nota').value };
-            localStorage.setItem(chiave, JSON.stringify(dati));
-            renderizzaCalendario();
-            vaiA('home');
+            if (!emojiSel) return alert("Scegli un meteo!");
+            localStorage.setItem(`meteo-${meseVis.getFullYear()}-${meseVis.getMonth()}-${giornoSel}`, JSON.stringify({emoji: emojiSel, nota: document.getElementById('nota').value}));
+            renderCal(); vaiA('home');
         }
 
-        function mostraDettaglio(giorno, dati) {
-            giornoSelezionato = giorno;
-            document.getElementById('data-titolo').innerText = `${giorno} ${nomiMesi[meseVisualizzato.getMonth()]}`;
-            document.getElementById('emoji-display').innerText = dati.emoji;
-            document.getElementById('nota-display').innerText = dati.nota || "Nessuna nota.";
-            document.getElementById('btn-modifica').onclick = () => preparaModifica(giorno, dati);
-            vaiA('dettaglio-giorno');
-        }
-
-        function preparaModifica(giorno, dati) {
-            giornoSelezionato = giorno;
-            const isOggi = (giorno === realeOggi.getDate() && meseVisualizzato.getMonth() === realeOggi.getMonth() && meseVisualizzato.getFullYear() === realeOggi.getFullYear());
-            document.getElementById('titolo-inserimento').innerText = isOggi ? "Che meteo hai oggi?" : `Modifica meteo del ${giorno}`;
-            document.getElementById('nota').value = dati.nota;
-            seleziona(dati.emoji, null);
-            document.querySelectorAll('.emoji-btn').forEach(btn => { if(btn.innerText === dati.emoji) btn.style.borderColor = "#D4B44B"; });
-            vaiA('nuovo-meteo');
-        }
-
-        function renderizzaCalendario() {
-            const cal = document.getElementById('calendario');
-            cal.innerHTML = "";
-            const anno = meseVisualizzato.getFullYear();
-            const mese = meseVisualizzato.getMonth();
-            
-            document.getElementById('display-mese').innerText = `${nomiMesi[mese]} ${anno}`;
-            const ultimoGiorno = new Date(anno, mese + 1, 0).getDate();
-
-            for (let i = 1; i <= ultimoGiorno; i++) {
-                let d = document.createElement('div');
-                d.className = 'giorno';
-                const chiave = `meteo-${anno}-${mese}-${i}`;
-                const salvati = JSON.parse(localStorage.getItem(chiave));
-                
-                const isOggi = (i === realeOggi.getDate() && mese === realeOggi.getMonth() && anno === realeOggi.getFullYear());
-                const isPassato = new Date(anno, mese, i) < new Date(realeOggi.getFullYear(), realeOggi.getMonth(), realeOggi.getDate());
-
-                if (isOggi) {
-                    d.classList.add('oggi');
-                    d.innerText = salvati ? salvati.emoji : "+";
-                    d.onclick = () => {
-                        giornoSelezionato = i;
-                        if(salvati) mostraDettaglio(i, salvati);
-                        else {
-                            document.getElementById('titolo-inserimento').innerText = "Che meteo hai oggi?";
-                            document.getElementById('nota').value = "";
-                            emojiSelezionata = "";
-                            document.querySelectorAll('.emoji-btn').forEach(btn => btn.style.borderColor = "#E6D5A7");
-                            vaiA('nuovo-meteo');
-                        }
-                    };
-                } else if (salvati) {
-                    d.innerText = salvati.emoji;
-                    d.onclick = () => mostraDettaglio(i, salvati);
-                } else {
-                    d.innerText = i;
-                    d.classList.add('disabilitato');
-                    // Solo se è passato e ha dati è cliccabile (gestito sopra). 
-                    // Se è passato/futuro senza dati, non fa nulla.
-                }
+        function renderCal() {
+            const cal = document.getElementById('calendario'); cal.innerHTML = "";
+            const y = meseVis.getFullYear(), m = meseVis.getMonth();
+            document.getElementById('display-mese').innerText = `${nomiMesi[m]} ${y}`;
+            for (let i = 1; i <= new Date(y, m + 1, 0).getDate(); i++) {
+                let d = document.createElement('div'); d.className = 'giorno';
+                const s = JSON.parse(localStorage.getItem(`meteo-${y}-${m}-${i}`));
+                const isOggi = (i === realeOggi.getDate() && m === realeOggi.getMonth() && y === realeOggi.getFullYear());
+                if (isOggi) { d.classList.add('oggi'); d.innerText = s ? s.emoji : "+"; }
+                else if (s) d.innerText = s.emoji;
+                else { d.innerText = i; d.classList.add('disabilitato'); }
+                d.onclick = () => { if(isOggi || s) { giornoSel = i; apriMeteo(s, isOggi); } };
                 cal.appendChild(d);
             }
         }
 
-        renderizzaCalendario();
+        function apriMeteo(s, isOggi) {
+            document.getElementById('titolo-inserimento').innerText = isOggi ? "Che meteo hai oggi?" : `Giorno ${giornoSel}`;
+            document.getElementById('nota').value = s ? s.nota : "";
+            seleziona(s ? s.emoji : "");
+            vaiA('nuovo-meteo');
+        }
+
+        function apriStats() {
+            vaiA('stats');
+            const dati30 = [], labels30 = [], conteggio7 = {};
+            for (let i = 29; i >= 0; i--) {
+                let data = new Date(); data.setDate(realeOggi.getDate() - i);
+                let s = JSON.parse(localStorage.getItem(`meteo-${data.getFullYear()}-${data.getMonth()}-${data.getDate()}`));
+                if (s) {
+                    dati30.push(pesiEmoji[s.emoji]);
+                    if (i < 7) conteggio7[s.emoji] = (conteggio7[s.emoji] || 0) + 1;
+                } else dati30.push(null);
+                labels30.push(data.getDate());
+            }
+
+            if (chartT) chartT.destroy();
+            chartT = new Chart(document.getElementById('chartTorta'), {
+                type: 'pie',
+                data: { labels: Object.keys(conteggio7), datasets: [{ data: Object.values(conteggio7), backgroundColor: ['#FFECB3', '#B2E2F2', '#E2F0CB', '#FFDAC1', '#FFB7B2'] }] }
+            });
+
+            if (chartL) chartL.destroy();
+            chartL = new Chart(document.getElementById('chartLinee'), {
+                type: 'line',
+                data: { labels: labels30, datasets: [{ label: 'Umore', data: dati30, borderColor: '#D4B44B', tension: 0.3, fill: false, spanGaps: true }] },
+                options: { scales: { y: { display: false, min: 1, max: 7 } } }
+            });
+
+            // Logica frase automatica
+            const emojis = Object.keys(conteggio7);
+            const prevalente = emojis.reduce((a, b) => conteggio7[a] > conteggio7[b] ? a : b, emojis[0] || "---");
+            document.getElementById('frase-riassunto').innerText = emojis.length > 0 ? 
+                `Questa settimana è stata prevalentemente ${prevalente}!` : "Ancora pochi dati per le statistiche...";
+        }
+
+        renderCal();
     </script>
 </body>
 </html>
