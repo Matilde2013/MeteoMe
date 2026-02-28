@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MeteoMe</title>
     
-    <!-- Font e Libreria Grafici -->
+    <!-- Librerie e Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com" rel="stylesheet">
@@ -20,12 +20,11 @@
         
         h1 { color: #8A7B4E; font-size: 32px; margin-bottom: 5px; }
         
-        /* Navigazione Mesi */
         .nav-mese { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px; }
         .mese-titolo { font-size: 22px; color: #A6997A; min-width: 140px; }
         .btn-nav { background: none; border: 2px solid #E6D5A7; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; color: #8A7B4E; }
 
-        .schermata { display: none; padding-bottom: 80px; }
+        .schermata { display: none; padding-bottom: 100px; }
         .attiva { display: block; }
 
         /* Calendario */
@@ -42,7 +41,7 @@
         .oggi { border: 3px solid #D4B44B; color: #D4B44B; font-size: 28px; }
         .disabilitato { opacity: 0.2; cursor: default; }
 
-        /* Statistiche */
+        /* Stats */
         .container-stats { max-width: 400px; margin: 0 auto; background: white; padding: 20px; border-radius: 25px; border: 2px solid #E6D5A7; }
         .frase-analisi { font-size: 18px; color: #665; font-style: italic; margin-top: 20px; padding: 15px; border-top: 1px solid #eee; }
 
@@ -52,8 +51,7 @@
 
         .btn-azione { background: #D4B44B; color: white; border: none; padding: 12px 25px; border-radius: 50px; font-family: inherit; font-weight: 600; font-size: 20px; margin: 10px 5px; cursor: pointer; }
         
-        /* Menu Inferiore fisso */
-        .menu-bottom { position: fixed; bottom: 20px; left: 0; right: 0; display: flex; justify-content: center; gap: 10px; }
+        .menu-bottom { position: fixed; bottom: 20px; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; }
     </style>
 </head>
 <body>
@@ -67,12 +65,14 @@
             <button class="btn-nav" onclick="cambiaMese(1)">&#10095;</button>
         </div>
         <div class="griglia" id="calendario"></div>
+        
         <div class="menu-bottom">
+            <button class="btn-azione" style="background:#8A7B4E; font-size: 16px; padding: 8px 20px;" onclick="attivaNotificheManualmente()">Attiva Notifiche 🔔</button>
             <button class="btn-azione" onclick="apriStats()">Statistiche 📊</button>
         </div>
     </div>
 
-    <!-- 2. STATISTICHE (Basate sul tuo disegno) -->
+    <!-- 2. STATISTICHE -->
     <div id="stats" class="schermata">
         <h1>Negli ultimi tempi...</h1>
         <div class="container-stats">
@@ -105,9 +105,9 @@
     </div>
 
     <script>
-        // --- 1. REGISTRAZIONE SERVICE WORKER (ASSISTENTE NOTIFICHE) ---
+        // Registra Service Worker per notifiche
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').then(() => console.log("SW Attivo"));
+            navigator.serviceWorker.register('sw.js').then(() => console.log("SW Pronto"));
         }
 
         const realeOggi = new Date();
@@ -133,8 +133,9 @@
             if (!emojiSelezionata) return alert("Scegli un'emoji!");
             const chiave = `meteo-${meseVis.getFullYear()}-${meseVis.getMonth()}-${giornoInModifica}`;
             localStorage.setItem(chiave, JSON.stringify({emoji: emojiSelezionata, nota: document.getElementById('nota').value}));
-            renderCal(); vaiA('home');
-            controllaNotifiche();
+            renderCal(); 
+            vaiA('home');
+            controllaTraguardi();
         }
 
         function renderCal() {
@@ -147,7 +148,6 @@
                 let d = document.createElement('div'); d.className = 'giorno';
                 const s = JSON.parse(localStorage.getItem(`meteo-${y}-${m}-${i}`));
                 const isOggi = (i === realeOggi.getDate() && m === realeOggi.getMonth() && y === realeOggi.getFullYear());
-                const dataGiorno = new Date(y, m, i);
 
                 if (isOggi) {
                     d.classList.add('oggi');
@@ -166,7 +166,10 @@
         function apriEditor(s, oggi) {
             document.getElementById('titolo-inserimento').innerText = oggi ? "Che meteo hai oggi?" : `Modifica giorno ${giornoInModifica}`;
             document.getElementById('nota').value = s ? s.nota : "";
-            seleziona(s ? s.emoji : "", null);
+            emojiSelezionata = s ? s.emoji : "";
+            document.querySelectorAll('.emoji-btn').forEach(btn => {
+                btn.style.borderColor = (btn.innerText === emojiSelezionata) ? "#D4B44B" : "#E6D5A7";
+            });
             vaiA('nuovo-meteo');
         }
 
@@ -197,28 +200,41 @@
             });
 
             const keys = Object.keys(conteggio7);
-            const prev = keys.reduce((a, b) => conteggio7[a] > conteggio7[b] ? a : b, keys[0] || "");
-            document.getElementById('frase-riassunto').innerText = prev ? `Questa settimana è stata prevalentemente ${prev}!` : "Inserisci qualche giorno per vedere l'analisi.";
+            if (keys.length > 0) {
+                const prev = keys.reduce((a, b) => conteggio7[a] > conteggio7[b] ? a : b);
+                document.getElementById('frase-riassunto').innerText = `Questa settimana è stata prevalentemente ${prev}!`;
+            } else {
+                document.getElementById('frase-riassunto').innerText = "Ancora nessun dato per questa settimana.";
+            }
         }
 
-        // --- SISTEMA NOTIFICHE ---
+        // Funzioni Notifiche
+        function attivaNotificheManualmente() {
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    inviaNotifica("MeteoMe", "Notifiche attivate con successo! 🌈");
+                } else {
+                    alert("Devi autorizzare le notifiche dalle impostazioni del browser.");
+                }
+            });
+        }
+
         function inviaNotifica(tit, msg) {
             if (Notification.permission === "granted") {
-                navigator.serviceWorker.ready.then(reg => reg.showNotification(tit, { body: msg, icon: 'https://cdn-icons-png.flaticon.com' }));
+                navigator.serviceWorker.ready.then(reg => {
+                    reg.showNotification(tit, { body: msg, icon: 'https://cdn-icons-png.flaticon.com' });
+                });
             }
         }
 
-        function controllaNotifiche() {
-            let count = 0;
+        function controllaTraguardi() {
+            let streak = 0;
             for(let i=0; i<7; i++) {
                 let d = new Date(); d.setDate(realeOggi.getDate()-i);
-                if(localStorage.getItem(`meteo-${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`)) count++;
+                if(localStorage.getItem(`meteo-${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`)) streak++;
             }
-            if(count === 7) inviaNotifica("Ottimo lavoro!", "Hai registrato 7 giorni consecutivi! 🌈");
+            if(streak === 7) inviaNotifica("Ottimo lavoro!", "Hai registrato 7 giorni consecutivi! 🌈");
         }
-
-        // Chiedi permesso notifiche all'avvio
-        if ("Notification" in window) Notification.requestPermission();
 
         renderCal();
     </script>
