@@ -1,4 +1,68 @@
-<div id="home" class="schermata attiva">
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeteoMe</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; font-weight: 600; 
+            background-color: #FFF9E5; text-align: center; color: #445; 
+            margin: 0; padding: 10px; font-size: 20px; 
+        }
+        h1 { color: #8A7B4E; font-size: 32px; margin-bottom: 5px; }
+        
+        /* Navigazione Mesi */
+        .nav-mese { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px; }
+        .mese-titolo { font-size: 22px; color: #A6997A; min-width: 140px; }
+        .btn-nav { background: none; border: 2px solid #E6D5A7; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; color: #8A7B4E; }
+        
+        /* Gestione Schermate */
+        .schermata { display: none; padding-bottom: 120px; max-width: 500px; margin: 0 auto; }
+        .attiva { display: block; }
+        
+        /* Griglia Calendario */
+        .griglia { 
+            display: grid; grid-template-columns: repeat(7, 1fr); 
+            gap: 10px; padding: 15px; background: rgba(255, 255, 255, 0.7); 
+            border-radius: 20px; margin: 0 auto;
+        }
+        .giorno { 
+            aspect-ratio: 1; background: #fff; border-radius: 12px; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 22px; border: 1px solid #E6D5A7; cursor: pointer;
+        }
+        .oggi { border: 3px solid #D4B44B; color: #D4B44B; font-size: 28px; }
+        .disabilitato { opacity: 0.4; cursor: pointer; background: #fdfdfd; }
+        
+        /* Box Statistiche e Recap */
+        .container-stats { background: white; padding: 20px; border-radius: 25px; border: 2px solid #E6D5A7; margin-top: 10px; }
+        .frase-analisi { font-size: 18px; color: #665; font-style: italic; margin-top: 20px; padding: 15px; border-top: 1px solid #eee; }
+        
+        /* Bottoni Emoji */
+        .emoji-btn { font-size: 32px; background: white; border: 2px solid #E6D5A7; border-radius: 15px; margin: 5px; cursor: pointer; padding: 10px; transition: 0.2s; }
+        
+        /* Input */
+        textarea { width: 90%; height: 120px; border-radius: 15px; border: 2px solid #E6D5A7; padding: 10px; font-family: inherit; font-weight: 600; font-size: 18px; outline: none; margin-top: 15px; }
+        
+        /* Bottoni Azione */
+        .btn-azione { background: #D4B44B; color: white; border: none; padding: 12px 25px; border-radius: 50px; font-family: inherit; font-weight: 600; font-size: 20px; margin: 10px 5px; cursor: pointer; }
+        .menu-bottom { position: fixed; bottom: 20px; left: 0; right: 0; display: flex; justify-content: center; gap: 8px; }
+        
+        /* Recap specifico */
+        #v-emoji { font-size: 80px; margin: 10px 0; }
+        #v-nota { font-style: italic; color: #556; line-height: 1.5; }
+    </style>
+</head>
+<body>
+
+    <div id="home" class="schermata attiva">
         <h1>Il clima mensile</h1>
         <div class="nav-mese">
             <button class="btn-nav" onclick="cambiaMese(-1)">&#10094;</button>
@@ -12,12 +76,10 @@
     </div>
 
     <div id="visualizza-meteo" class="schermata">
-        <h1 id="v-data-titolo" style="font-size: 24px; color: #A6997A;">Data</h1>
-        <div class="container-stats" style="margin-top: 20px;">
-            <div id="v-emoji" style="font-size: 80px; margin: 20px 0;">🌈</div>
-            <div id="v-nota" style="font-size: 20px; color: #445; min-height: 50px; padding: 10px; line-height: 1.4;">
-                La tua nota apparirà qui...
-            </div>
+        <h1 id="v-data-titolo">Data</h1>
+        <div class="container-stats">
+            <div id="v-emoji">🌈</div>
+            <div id="v-nota">Nota...</div>
         </div>
         <br>
         <button class="btn-azione" onclick="apriEditorDalRecap()">Modifica ✏️</button>
@@ -40,92 +102,3 @@
         <button class="btn-azione" onclick="salvaMeteo()">Salva</button>
         <button class="btn-azione" style="background:#E6D5A7; color:#445" onclick="vaiA('home')">Annulla</button>
     </div>
-
-    <script>
-        const realeOggi = new Date();
-        let meseVis = new Date(realeOggi.getFullYear(), realeOggi.getMonth(), 1);
-        const nomiMesi = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
-        let giornoInModifica = 1, emojiSelezionata = "", datiGiornoCorrente = null;
-
-        function vaiA(id) {
-            document.querySelectorAll('.schermata').forEach(s => s.classList.remove('attiva'));
-            document.getElementById(id).classList.add('attiva');
-        }
-
-        function cambiaMese(d) { meseVis.setMonth(meseVis.getMonth() + d); renderCal(); }
-
-        function seleziona(emoji, elemento) {
-            emojiSelezionata = emoji;
-            document.querySelectorAll('.emoji-btn').forEach(btn => btn.style.borderColor = "#E6D5A7");
-            if(elemento) elemento.style.borderColor = "#D4B44B";
-        }
-
-        function salvaMeteo() {
-            if (!emojiSelezionata) return alert("Scegli un'emoji!");
-            const chiave = `meteo-${meseVis.getFullYear()}-${meseVis.getMonth()}-${giornoInModifica}`;
-            localStorage.setItem(chiave, JSON.stringify({
-                emoji: emojiSelezionata, 
-                nota: document.getElementById('nota').value
-            }));
-            renderCal(); 
-            vaiA('home');
-        }
-
-        function renderCal() {
-            const cal = document.getElementById('calendario'); cal.innerHTML = "";
-            const y = meseVis.getFullYear(), m = meseVis.getMonth();
-            document.getElementById('display-mese').innerText = `${nomiMesi[m]} ${y}`;
-            const fineMese = new Date(y, m + 1, 0).getDate();
-
-            for (let i = 1; i <= fineMese; i++) {
-                let d = document.createElement('div'); d.className = 'giorno';
-                const s = JSON.parse(localStorage.getItem(`meteo-${y}-${m}-${i}`));
-                const isOggi = (i === realeOggi.getDate() && m === realeOggi.getMonth() && y === realeOggi.getFullYear());
-                
-                if (isOggi) { 
-                    d.classList.add('oggi'); 
-                    d.innerText = s ? s.emoji : "+"; 
-                    d.onclick = () => { giornoInModifica = i; s ? apriRecap(s) : apriEditor(null, true); }; 
-                } else if (s) { 
-                    d.innerText = s.emoji; 
-                    d.onclick = () => { giornoInModifica = i; apriRecap(s); }; 
-                } else { 
-                    d.innerText = i; 
-                    d.classList.add('disabilitato');
-                    d.onclick = () => { giornoInModifica = i; apriEditor(null, false); };
-                }
-                cal.appendChild(d);
-            }
-        }
-
-        // Funzione per visualizzare il riepilogo (Emoji grande + Nota)
-        function apriRecap(s) {
-            datiGiornoCorrente = s; // Salva i dati per un'eventuale modifica
-            document.getElementById('v-data-titolo').innerText = `${giornoInModifica} ${nomiMesi[meseVis.getMonth()]} ${meseVis.getFullYear()}`;
-            document.getElementById('v-emoji').innerText = s.emoji;
-            document.getElementById('v-nota').innerText = s.nota || "Nessuna nota per questo giorno.";
-            vaiA('visualizza-meteo');
-        }
-
-        // Passaggio dal recap all'editor
-        function apriEditorDalRecap() {
-            apriEditor(datiGiornoCorrente, false);
-        }
-
-        function apriEditor(s, oggi) {
-            document.getElementById('titolo-inserimento').innerText = oggi ? "Che meteo hai oggi?" : `Modifica ${giornoInModifica} ${nomiMesi[meseVis.getMonth()]}`;
-            document.getElementById('nota').value = s ? s.nota : "";
-            emojiSelezionata = s ? s.emoji : "";
-            
-            // Reset bordi emoji
-            document.querySelectorAll('.emoji-btn').forEach(btn => {
-                btn.style.borderColor = (btn.innerText === emojiSelezionata) ? "#D4B44B" : "#E6D5A7";
-            });
-            
-            vaiA('nuovo-meteo');
-        }
-
-        // (La funzione apriStats rimane la stessa del codice precedente)
-
-        renderCal();
-    </script>
