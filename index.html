@@ -17,7 +17,9 @@
         body { 
             font-family: 'Inter', sans-serif; font-weight: 600; 
             background-color: #FFF9E5; text-align: center; color: #445; 
-            margin: 0; padding: 10px; font-size: 20px; 
+            margin: 0; padding: 10px; font-size: 20px;
+            /* Transizione per il cambio colore dello sfondo */
+            transition: background-color 0.8s ease;
         }
         h1 { color: #8A7B4E; font-size: 28px; margin-bottom: 10px; }
         .schermata { display: none; max-width: 400px; margin: 0 auto; padding-bottom: 100px; }
@@ -124,13 +126,26 @@
         const nomiGiorni = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
         const pesiEmoji = { '🌈': 7, '☀': 6, '⛅': 5, '☁': 4, '☔': 3, '⚡': 2, '🌪': 1, '🌬': 4, '❄': 2, '🌟': 7 };
         
+        // Mappa colori per lo sfondo
+        const coloriMeteo = {
+            '🌈': '#FDF2FF', '☀': '#FFF9E5', '⛅': '#F0F4F8', '☁': '#E2E8F0', 
+            '☔': '#E0F2FE', '⚡': '#FEF3C7', '🌪': '#F1F5F9', '🌬': '#F0FDFA', 
+            '❄': '#F0F9FF', '🌟': '#FFFBEB'
+        };
+
         let giornoSelezionato = 1;
         let emojiSelezionata = "";
         let chartT = null, chartL = null;
 
+        function aggiornaSfondo(emoji) {
+            const colore = coloriMeteo[emoji] || '#FFF9E5';
+            document.body.style.backgroundColor = colore;
+        }
+
         function vaiA(id) {
             document.querySelectorAll('.schermata').forEach(s => s.classList.remove('attiva'));
             document.getElementById(id).classList.add('attiva');
+            if (id === 'home') aggiornaSfondo('☀');
         }
 
         function cambiaMese(n) {
@@ -142,6 +157,7 @@
             emojiSelezionata = emoji;
             document.querySelectorAll('.emoji-btn').forEach(b => b.style.borderColor = "#E6D5A7");
             btn.style.borderColor = "#D4B44B";
+            aggiornaSfondo(emoji);
         }
 
         function calcolaStreak() {
@@ -216,6 +232,7 @@
             document.getElementById('v-data-titolo').innerText = `${giornoSelezionato} ${nomiMesi[meseVis.getMonth()]}`;
             document.getElementById('v-emoji').innerText = dati.emoji;
             document.getElementById('v-nota').innerText = dati.nota || "Nessuna nota.";
+            aggiornaSfondo(dati.emoji);
             vaiA('visualizza-meteo');
         }
 
@@ -239,6 +256,8 @@
             document.getElementById('streak-info').innerText = streak > 0 ? `Serie attuale: ${streak} giorni! 🔥` : "";
 
             emojiSelezionata = dati ? dati.emoji : "";
+            if(emojiSelezionata) aggiornaSfondo(emojiSelezionata);
+
             document.querySelectorAll('.emoji-btn').forEach(btn => {
                 btn.style.borderColor = (btn.innerText === emojiSelezionata) ? "#D4B44B" : "#E6D5A7";
             });
