@@ -19,6 +19,7 @@
             --text-primary: #445;
             --accent: #D4B44B;
             --border-color: #E6D5A7;
+            --flower-color: #FFB7B2;
         }
 
         body { 
@@ -30,14 +31,12 @@
             margin: 0; 
             padding: 10px; 
             font-size: 20px;
-            /* Transizione fluida e morbida per lo sfondo e il testo */
             transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1), color 0.5s ease;
             min-height: 100vh;
         }
 
         h1 { color: #8A7B4E; font-size: 28px; margin-bottom: 10px; transition: color 0.5s ease; }
         
-        /* Adattamento testo per sfondi scuri */
         body.dark-text-mode { color: #ffffff; }
         body.dark-text-mode h1, body.dark-text-mode .mese-titolo { color: #ffffff; }
 
@@ -92,7 +91,13 @@
         }
         
         .btn-azione { background: var(--accent); color: white; border: none; padding: 12px 25px; border-radius: 50px; font-family: inherit; font-weight: 600; cursor: pointer; margin: 5px; box-shadow: 0 4px 10px rgba(212, 180, 75, 0.3); }
-        .menu-bottom { position: fixed; bottom: 20px; left: 0; right: 0; display: flex; justify-content: center; }
+        .menu-bottom { position: fixed; bottom: 20px; left: 0; right: 0; display: flex; justify-content: center; gap: 10px; }
+        
+        /* Stili Giardino e Pianta */
+        #giardino-box { font-size: 80px; margin: 20px 0; transition: all 0.5s ease; }
+        .stats-giardino { font-size: 16px; color: #8A7B4E; margin-bottom: 20px; }
+        .anteprima-giardino { font-size: 40px; cursor: pointer; margin-top: 10px; }
+
         .frase-analisi { font-size: 16px; color: #8A7B4E; margin-top: 15px; font-style: italic; }
         canvas { max-width: 100%; margin-top: 15px; }
         .badge-info { font-size: 14px; color: var(--accent); margin-top: 10px; display: block; }
@@ -102,6 +107,11 @@
 
     <div id="home" class="schermata attiva">
         <h1>Il clima mensile</h1>
+        
+        <div class="anteprima-giardino" onclick="vaiA('giardino')">
+            <span id="mini-pianta">🌱</span>
+        </div>
+
         <div class="nav-mese">
             <button class="btn-nav" onclick="cambiaMese(-1)">&#10094;</button>
             <div class="mese-titolo" id="display-mese"></div>
@@ -110,7 +120,22 @@
         <div class="griglia" id="calendario"></div>
         <div class="menu-bottom">
             <button class="btn-azione" onclick="apriStats()">Statistiche 📊</button>
+            <button class="btn-azione" style="background:#8A7B4E" onclick="vaiA('giardino')">Giardino 🌸</button>
         </div>
+    </div>
+
+    <div id="giardino" class="schermata">
+        <h1>Il mio Giardino</h1>
+        <div class="container-box">
+            <div id="giardino-box">🌱</div>
+            <div class="stats-giardino">
+                <p id="pianta-stato">La tua pianta sta germogliando...</p>
+                <p id="pianta-livello">Livello: 1</p>
+            </div>
+            <p style="font-size: 14px; color: #998;">Inserisci il meteo ogni giorno per far crescere il tuo fiore. Se salti un giorno, appassirà!</p>
+        </div>
+        <br>
+        <button class="btn-azione" onclick="vaiA('home')">Torna alla Home</button>
     </div>
 
     <div id="visualizza-meteo" class="schermata">
@@ -168,7 +193,6 @@
         const nomiGiorni = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
         const pesiEmoji = { '🌈': 7, '☀': 6, '⛅': 5, '☁': 4, '☔': 3, '⚡': 2, '🌪': 1, '🌬': 4, '❄': 2, '🌟': 7 };
         
-        // Mappa colori aggiornata (HEX)
         const coloriMeteo = {
             '🌈': '#FDF2FF', '☀': '#FFF9E5', '⛅': '#F0F4F8', '☁': '#E2E8F0', 
             '☔': '#E0F2FE', '⚡': '#FEF3C7', '🌪': '#F1F5F9', '🌬': '#F0FDFA', 
@@ -179,7 +203,42 @@
         let emojiSelezionata = "";
         let chartT = null, chartL = null;
 
-        // Funzione per calcolare se un colore è scuro o chiaro
+        // --- SISTEMA FIORITURA ---
+        const stadiPianta = ["🫘", "🌱", "🌿", "🪴", "🌿🌸", "🌸"];
+        const messaggiPianta = [
+            "Un seme è stato piantato.", 
+            "Qualcosa sta spuntando!", 
+            "La tua costanza la sta nutrendo.", 
+            "La pianta è forte e rigogliosa!", 
+            "Quasi in fiore...", 
+            "Splendido! Il tuo giardino splende!"
+        ];
+
+        function aggiornaGiardino() {
+            const streak = calcolaStreak();
+            // Calcolo livello: 1 livello ogni 2 giorni di streak (max 5)
+            let livello = Math.min(Math.floor(streak / 2), 5);
+            
+            // Se non hai inserito nulla oggi e ieri, la pianta appassisce (livello - 1)
+            const ieri = new Date(realeOggi); ieri.setDate(ieri.getDate() - 1);
+            const datiOggi = localStorage.getItem(`meteo-${realeOggi.getFullYear()}-${realeOggi.getMonth()}-${realeOggi.getDate()}`);
+            const datiIeri = localStorage.getItem(`meteo-${ieri.getFullYear()}-${ieri.getMonth()}-${ieri.getDate()}`);
+            
+            if (!datiOggi && !datiIeri && livello > 0) {
+                livello = Math.max(0, livello - 1);
+                document.getElementById('pianta-stato').innerText = "La pianta ha sete... inserisci il meteo!";
+            } else {
+                document.getElementById('pianta-stato').innerText = messaggiPianta[livello];
+            }
+
+            const icona = stadiPianta[livello];
+            document.getElementById('giardino-box').innerText = icona;
+            document.getElementById('mini-pianta').innerText = icona;
+            document.getElementById('pianta-livello').innerText = `Livello: ${livello + 1}`;
+        }
+
+        // --- LOGICA ESISTENTE AGGIORNATA ---
+
         function getLuminance(hex) {
             const rgb = hex.replace('#', '').match(/.{2}/g).map(x => parseInt(x, 16));
             return (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255;
@@ -188,8 +247,6 @@
         function aggiornaSfondo(emoji) {
             const colore = coloriMeteo[emoji] || '#FFF9E5';
             document.body.style.backgroundColor = colore;
-            
-            // Dark Mode Dinamica: se il colore è scuro, inverti il testo
             if (getLuminance(colore) < 0.5) {
                 document.body.classList.add('dark-text-mode');
             } else {
@@ -200,8 +257,10 @@
         function vaiA(id) {
             document.querySelectorAll('.schermata').forEach(s => s.classList.remove('attiva'));
             document.getElementById(id).classList.add('attiva');
-            // Quando torni in home, ripristina il colore neutro
-            if (id === 'home') aggiornaSfondo('☀');
+            if (id === 'home') {
+                aggiornaSfondo('☀');
+                aggiornaGiardino();
+            }
         }
 
         function cambiaMese(n) {
@@ -219,6 +278,10 @@
         function calcolaStreak() {
             let streak = 0;
             let d = new Date(realeOggi);
+            // Se oggi non c'è, partiamo da ieri per il calcolo della serie
+            let datiOggi = localStorage.getItem(`meteo-${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+            if (!datiOggi) d.setDate(d.getDate() - 1);
+
             while (true) {
                 let dati = localStorage.getItem(`meteo-${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
                 if (dati) {
@@ -282,13 +345,14 @@
                 }
                 cal.appendChild(cella);
             }
+            aggiornaGiardino();
         }
 
         function apriRecap(dati) {
             document.getElementById('v-data-titolo').innerText = `${giornoSelezionato} ${nomiMesi[meseVis.getMonth()]}`;
             document.getElementById('v-emoji').innerText = dati.emoji;
             document.getElementById('v-nota').innerText = dati.nota || "Nessuna nota.";
-            aggiornaSfondo(dati.emoji); // Cambio colore fluido all'apertura del recap
+            aggiornaSfondo(dati.emoji);
             vaiA('visualizza-meteo');
         }
 
