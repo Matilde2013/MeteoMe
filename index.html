@@ -31,6 +31,7 @@
             gap: 8px; padding: 15px; background: rgba(255, 255, 255, 0.6); 
             border-radius: 20px; border: 1px solid #E6D5A7;
         }
+        .giorno-settimana { font-size: 12px; color: #A6997A; padding-bottom: 5px; text-transform: uppercase; }
         .giorno { 
             aspect-ratio: 1; background: #fff; border-radius: 10px; 
             display: flex; align-items: center; justify-content: center; 
@@ -51,6 +52,7 @@
         .menu-bottom { position: fixed; bottom: 20px; left: 0; right: 0; display: flex; justify-content: center; }
         .frase-analisi { font-size: 16px; color: #8A7B4E; margin-top: 15px; font-style: italic; }
         canvas { max-width: 100%; margin-top: 15px; }
+        .badge-info { font-size: 14px; color: #D4B44B; margin-top: 10px; display: block; }
     </style>
 </head>
 <body>
@@ -83,14 +85,16 @@
         <h1 id="titolo-inserimento">Come stai?</h1>
         <div id="scelta-emoji">
             <button class="emoji-btn" onclick="seleziona('🌈', this)">🌈</button>
-            <button class="emoji-btn" onclick="seleziona('🌞', this)">🌞</button>
+            <button class="emoji-btn" onclick="seleziona('☀', this)">☀</button>
             <button class="emoji-btn" onclick="seleziona('⛅', this)">⛅</button>
             <button class="emoji-btn" onclick="seleziona('☁', this)">☁</button>
-            <button class="emoji-btn" onclick="seleziona('🌧', this)">🌧</button>
-            <button class="emoji-btn" onclick="seleziona('🌩', this)">🌩</button>
+            <button class="emoji-btn" onclick="seleziona('☔', this)">☔</button>
+            <button class="emoji-btn" onclick="seleziona('⚡', this)">⚡</button>
             <button class="emoji-btn" onclick="seleziona('🌪', this)">🌪</button>
+            <div id="emoji-extra"></div>
         </div>
         <textarea id="nota" placeholder="Scrivi un pensiero..."></textarea>
+        <span id="streak-info" class="badge-info"></span>
         <br>
         <button class="btn-azione" onclick="salvaMeteo()">Salva</button>
         <button class="btn-azione" style="background:#E6D5A7; color:#445" onclick="vaiA('home')">Annulla</button>
@@ -109,11 +113,16 @@
     </div>
 
     <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+
         const realeOggi = new Date();
         realeOggi.setHours(0,0,0,0);
         let meseVis = new Date(realeOggi.getFullYear(), realeOggi.getMonth(), 1);
         const nomiMesi = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
-        const pesiEmoji = { '🌈': 7, '🌞': 6, '⛅': 5, '☁': 4, '🌧': 3, '🌩': 2, '🌪': 1 };
+        const nomiGiorni = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
+        const pesiEmoji = { '🌈': 7, '☀': 6, '⛅': 5, '☁': 4, '☔': 3, '⚡': 2, '🌪': 1, '🌬': 4, '❄': 2, '🌟': 7 };
         
         let giornoSelezionato = 1;
         let emojiSelezionata = "";
@@ -135,18 +144,50 @@
             btn.style.borderColor = "#D4B44B";
         }
 
+        function calcolaStreak() {
+            let streak = 0;
+            let d = new Date(realeOggi);
+            while (true) {
+                let dati = localStorage.getItem(`meteo-${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+                if (dati) {
+                    streak++;
+                    d.setDate(d.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+            return streak;
+        }
+
         function renderCal() {
             const cal = document.getElementById('calendario');
             cal.innerHTML = "";
             const y = meseVis.getFullYear(), m = meseVis.getMonth();
             document.getElementById('display-mese').innerText = `${nomiMesi[m]} ${y}`;
-            const ultimoGiorno = new Date(y, m + 1, 0).getDate();
+            
+            nomiGiorni.forEach(g => {
+                const div = document.createElement('div');
+                div.className = 'giorno-settimana';
+                div.innerText = g;
+                cal.appendChild(div);
+            });
 
+            const primoGiornoMese = new Date(y, m, 1).getDay();
+            const offset = primoGiornoMese === 0 ? 6 : primoGiornoMese - 1;
+            const ultimoGiornoMesePrec = new Date(y, m, 0).getDate();
+
+            for (let i = offset - 1; i >= 0; i--) {
+                const vuoto = document.createElement('div');
+                vuoto.className = 'giorno passato-vuoto';
+                vuoto.innerText = ultimoGiornoMesePrec - i;
+                cal.appendChild(vuoto);
+            }
+
+            const ultimoGiorno = new Date(y, m + 1, 0).getDate();
             for (let i = 1; i <= ultimoGiorno; i++) {
                 const cella = document.createElement('div');
                 cella.className = 'giorno';
                 const dati = JSON.parse(localStorage.getItem(`meteo-${y}-${m}-${i}`));
-                
                 const dataCella = new Date(y, m, i);
                 const isOggi = (dataCella.getTime() === realeOggi.getTime());
                 const isFuturo = (dataCella.getTime() > realeOggi.getTime());
@@ -157,17 +198,14 @@
                     cella.onclick = () => { giornoSelezionato = i; dati ? apriRecap(dati) : apriEditor(null); };
                 } else if (isFuturo) {
                     cella.classList.add('futuro');
-                    cella.innerText = i; // Mostra il numero per i giorni futuri
-                    // Nessun onclick per il futuro
+                    cella.innerText = i;
                 } else {
-                    // Giorni passati
                     if (dati) {
                         cella.innerText = dati.emoji;
                         cella.onclick = () => { giornoSelezionato = i; apriRecap(dati); };
                     } else {
-                        cella.innerText = ""; 
+                        cella.innerText = i;
                         cella.classList.add('passato-vuoto');
-                        // Non cliccabile se passato e vuoto
                     }
                 }
                 cal.appendChild(cella);
@@ -189,11 +227,30 @@
         function apriEditor(dati) {
             document.getElementById('titolo-inserimento').innerText = `Giorno ${giornoSelezionato} ${nomiMesi[meseVis.getMonth()]}`;
             document.getElementById('nota').value = dati ? dati.nota : "";
+            
+            const streak = calcolaStreak();
+            const containerExtra = document.getElementById('emoji-extra');
+            containerExtra.innerHTML = "";
+            
+            if (streak >= 10) aggiungiEmojiExtra('🌬', containerExtra);
+            if (streak >= 20) aggiungiEmojiExtra('❄', containerExtra);
+            if (streak >= 30) aggiungiEmojiExtra('🌟', containerExtra);
+            
+            document.getElementById('streak-info').innerText = streak > 0 ? `Serie attuale: ${streak} giorni! 🔥` : "";
+
             emojiSelezionata = dati ? dati.emoji : "";
             document.querySelectorAll('.emoji-btn').forEach(btn => {
                 btn.style.borderColor = (btn.innerText === emojiSelezionata) ? "#D4B44B" : "#E6D5A7";
             });
             vaiA('nuovo-meteo');
+        }
+
+        function aggiungiEmojiExtra(emoji, container) {
+            const btn = document.createElement('button');
+            btn.className = 'emoji-btn';
+            btn.innerText = emoji;
+            btn.onclick = () => seleziona(emoji, btn);
+            container.appendChild(btn);
         }
 
         function salvaMeteo() {
@@ -221,7 +278,7 @@
                 if (chartT) chartT.destroy();
                 chartT = new Chart(document.getElementById('chartTorta'), {
                     type: 'doughnut',
-                    data: { labels: Object.keys(conteggio30), datasets: [{ data: Object.values(conteggio30), backgroundColor: ['#FFECB3', '#B2E2F2', '#E2F0CB', '#FFDAC1', '#FFB7B2'] }] }
+                    data: { labels: Object.keys(conteggio30), datasets: [{ data: Object.values(conteggio30), backgroundColor: ['#FFECB3', '#B2E2F2', '#E2F0CB', '#FFDAC1', '#FFB7B2', '#D1C4E9', '#F8BBD0'] }] }
                 });
 
                 if (chartL) chartL.destroy();
